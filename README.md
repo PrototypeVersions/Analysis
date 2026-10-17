@@ -4,7 +4,7 @@
 
 A focused demonstration of interactive CARS explanations: one original 504-word humanities passage and three questions. The learner reads the passage, answers a question, and explores the rationale for every option. There is no warm-up or separate argument-mapping quiz.
 
-1. **Evaluate new evidence — Reasoning beyond the text.** A focused explanation connects each hypothetical finding to the particular claim in paragraph 4. Weakening that reason does not automatically refute the whole argument.
+1. **Evaluate new evidence — Reasoning beyond the text.** An explicitly labeled Question 1 explanation connects three things: the author’s actual sentence in paragraph 4, the hypothetical finding in an answer option, and the finding’s effect on that claim. Buttons say “Why A is correct” and “Why B/C/D is incorrect”; the same source sentence stays highlighted for all four explanations. Weakening that reason does not automatically refute the whole argument.
 2. **Compare perspectives — Reasoning within the text.** A viewpoint lens and quoted evidence distinguish reported positions from the author's own position. Background narration is not treated as a separate speaker.
 3. **Apply a position — Reasoning beyond the text.** A comparison checks the choices against relevant passage priorities, distinguishing a conflict from an unspecified detail. An optional condition toggle explores why active damage would change the reasoning.
 

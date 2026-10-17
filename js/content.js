@@ -168,36 +168,40 @@ export const QUESTIONS = [
     "skill": "Reasoning beyond the text",
     "tool": "trace",
     "focusNode": "R2",
-    "toolHead": "Explore the explanation",
-    "stem": "Which of the following findings, if true, would most seriously challenge the author’s argument in paragraph 4?",
+    "toolHead": "Question 1 · Answer explanations",
+    "stem": "Which finding, if true, would most strongly challenge the author’s claim in paragraph 4 that cleaning cannot fully recover a painting’s original appearance?",
     "choices": [
       {
         "id": "A",
         "text": "A new cleaning method reliably reverses all age-related changes in a painting’s surface, recovering its original appearance without conjecture about the artist’s intentions.",
         "target": "R2",
         "effect": "undercuts",
-        "rationale": "Accept this finding as true for the hypothetical question. It directly challenges paragraph 4’s claim that the original appearance cannot be recovered without interpretation. It does not answer paragraph 3’s separate concern about losing historically meaningful changes."
+        "rationale": "Accept this finding as true for the hypothetical question. It directly challenges paragraph 4’s claim that the original appearance cannot be recovered without interpretation. It does not answer paragraph 3’s separate concern about losing historically meaningful changes.",
+        "comparison": "The author says that the original appearance cannot be fully recovered. A asks us to suppose that a new method can recover it, without guessing what the artist intended. If A were true, it would directly contradict this claim. The author’s separate concern about preserving history could still stand."
       },
       {
         "id": "B",
         "text": "Most museum visitors prefer paintings that have been cleaned to those that have not.",
         "target": null,
         "effect": "misses",
-        "rationale": "Visitor preference concerns the appeal of cleaning, but it does not establish whether cleaning can recover an original appearance. The author already acknowledges delighted viewers in paragraph 1. This finding does not weaken the targeted reason."
+        "rationale": "Visitor preference concerns the appeal of cleaning, but it does not establish whether cleaning can recover an original appearance. The author already acknowledges delighted viewers in paragraph 1. This finding does not weaken the targeted reason.",
+        "comparison": "Visitors might prefer a cleaned painting even if its appearance is only an approximation of the original. A preference for the result provides no evidence that the original appearance has actually been recovered."
       },
       {
         "id": "C",
         "text": "Painters in later centuries often based their own palettes on darkened versions of earlier works.",
         "target": "R1",
         "effect": "supports",
-        "rationale": "This supports paragraph 3: an aged appearance can influence later artists and become historically meaningful. It leaves paragraph 4’s claim about recovering the original appearance unchallenged."
+        "rationale": "This supports paragraph 3: an aged appearance can influence later artists and become historically meaningful. It leaves paragraph 4’s claim about recovering the original appearance unchallenged.",
+        "comparison": "This tells us that an aged painting influenced later artists. It supports the author’s separate point in paragraph 3 that a painting’s history matters. It gives us no reason to think cleaning can fully recover the original appearance."
       },
       {
         "id": "D",
         "text": "Stabilizing flaking paint sometimes requires adding new material to a painting’s surface.",
         "target": "C",
         "effect": "fits",
-        "rationale": "Paragraph 5 allows treatment to halt active damage. Adding material during stabilization is compatible with that qualification and does not show that an original appearance can be recovered."
+        "rationale": "Paragraph 5 allows treatment to halt active damage. Adding material during stabilization is compatible with that qualification and does not show that an original appearance can be recovered.",
+        "comparison": "This tells us how restorers may stabilize damage. Adding material to protect a painting does not show that its original appearance can be fully recovered. The author already permits treatment of active damage in paragraph 5."
       }
     ],
     "answer": "A",

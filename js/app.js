@@ -1,4 +1,4 @@
-import { PASSAGE, QUESTIONS } from './content.js?v=9';
+import { PASSAGE, QUESTIONS } from './content.js?v=10';
 
 const $ = (id) => document.getElementById(id);
 const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -110,6 +110,7 @@ function renderQuestion() {
   $('skill').textContent = `${q.activity} · ${q.skill}`;
   $('stem').textContent = q.stem;
   $('answerHint').hidden = st.submitted;
+  $('answerHint').textContent = q.tool === 'trace' ? 'Treat each finding as true for this hypothetical question. Choose the one that most weakens the author’s stated claim.' : 'Choose the best-supported answer, then check your reasoning.';
   $('choices').classList.toggle('locked', st.submitted);
   $('choices').innerHTML = q.choices.map(c => {
     const correct = st.submitted && c.id === q.answer, wrong = st.submitted && c.id === st.selected && !correct;
@@ -151,29 +152,34 @@ function renderExplanation(q, st) {
   const correct = st.selected === q.answer;
   $('result').className = `result ${correct ? 'ok' : 'no'}`;
   $('result').textContent = correct ? `Correct — ${q.answer}.` : `You chose ${st.selected}. The best answer is ${q.answer}.`;
+  $('whyHead').hidden = q.tool === 'trace';
+  $('explanation').hidden = q.tool === 'trace';
   $('whyHead').textContent = `Why ${q.answer} is best supported`;
   $('explanation').textContent = q.explanation;
   $('takeaway').textContent = q.takeaway;
-  const root = $('tool'); root.innerHTML = `<h3>${esc(q.toolHead)}</h3>`;
+  const root = $('tool'); root.classList.remove('focused-explanation'); root.innerHTML = `<h3>${esc(q.toolHead)}</h3>`;
   ({ trace: buildTrace, voice: buildVoice, principle: buildPrinciple })[q.tool](root, q, st);
 }
 
-const effectLabels = { undercuts: 'Directly weakens paragraph 4', supports: 'Supports paragraph 3 instead', fits: 'Fits paragraph 5; leaves paragraph 4 intact', misses: 'Does not test paragraph 4’s claim' };
 function buildTrace(root, q, st) {
-  root.insertAdjacentHTML('beforeend', `<p class="hint">You have answered the question. Select a choice below to explore its explanation and see how it relates to the claim the question targets.</p>
-    <div class="target-claim"><span class="eyebrow">The claim being tested · Paragraph 4</span><p>Cleaning cannot fully recover an original appearance without interpretation.</p></div>
-    <div class="trace-options" role="group" aria-label="Explore answer explanations">${q.choices.map(c => `<button type="button" class="trace-button" data-choice="${c.id}" aria-pressed="false"><span class="letter">${c.id}</span><span>${esc(c.text)}</span></button>`).join('')}</div>
-    <div class="trace-detail" aria-live="polite"></div>`);
-  const trace = id => {
+  root.classList.add('focused-explanation');
+  root.insertAdjacentHTML('beforeend', `<p class="explanation-purpose"><strong>Question 1 asked:</strong> Which new finding would make the author’s claim less convincing?</p>
+    <p class="hint">The buttons below explain the original answer options. They do not ask you to answer another question.</p>
+    <div class="explanation-tabs" role="group" aria-label="Read an explanation for Question 1"><button type="button" data-choice="A" aria-pressed="false">Why A is correct</button><button type="button" data-choice="B" aria-pressed="false">Why B is incorrect</button><button type="button" data-choice="C" aria-pressed="false">Why C is incorrect</button><button type="button" data-choice="D" aria-pressed="false">Why D is incorrect</button></div>
+    <div class="reasoning-chain" aria-live="polite"></div>`);
+  const explainChoice = id => {
     const c = q.choices.find(choice => choice.id === id);
     st.evidence = id;
     root.querySelectorAll('[data-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.choice === id)));
-    const ids = c.target ? nodeSentences(c.target) : ['p1s3'];
-    root.querySelector('.trace-detail').innerHTML = `<div class="verdict ${c.effect}"><p class="eyebrow">Choice ${id}${id === q.answer ? ' · Correct answer' : ''}</p><h4>${effectLabels[c.effect]}</h4><p>${esc(c.rationale)}</p></div><details class="source-details"><summary>Read the relevant passage evidence</summary>${evidenceMarkup(ids)}</details>`;
-    lightSentences(ids);
+    root.querySelector('.reasoning-chain').innerHTML = `
+      <section class="reasoning-step passage-step"><h4><span class="step-number" aria-hidden="true">1</span>What the author claims</h4><p class="step-location">From paragraph 4 of the passage · highlighted in blue</p><blockquote>“${esc(SENTENCES.p4s3.text)}”</blockquote><p><strong>In plain language:</strong> Cleaning can only approximate the original appearance.</p></section>
+      <section class="reasoning-step finding-step"><h4><span class="step-number" aria-hidden="true">2</span>What answer ${id} asks us to suppose</h4><p class="step-location">A hypothetical finding supplied by Question 1</p><p>${esc(c.text)}</p></section>
+      <section class="reasoning-step conclusion-step ${id === q.answer ? 'is-answer' : ''}"><h4><span class="step-number" aria-hidden="true">3</span>${id === q.answer ? 'Why this weakens the author’s claim' : 'Why this does not weaken the author’s claim'}</h4><p>${esc(c.comparison)}</p><p class="choice-conclusion">${id === q.answer ? 'A is correct because Question 1 asks for the finding that most weakens this claim.' : `${id} is incorrect because it does not challenge the specific claim Question 1 asks about.`}</p></section>`;
+    // Keep the question's target fixed. Other choices must not shift the highlighted claim.
+    lightSentences(['p4s3']);
   };
-  root.querySelectorAll('[data-choice]').forEach(button => button.addEventListener('click', () => trace(button.dataset.choice)));
-  trace(st.evidence || st.selected);
+  root.querySelectorAll('[data-choice]').forEach(button => button.addEventListener('click', () => explainChoice(button.dataset.choice)));
+  explainChoice(st.evidence || q.answer);
 }
 function buildVoice(root, q, st) {
   root.insertAdjacentHTML('beforeend', `<p class="hint">The colors mark whose position is being represented, even when the author reports someone else’s view. Background is narration by the author, not a fourth speaker. Choose an answer below to compare the relevant sentences; some evidence contradicts the choice.</p><button type="button" class="lens-toggle" id="lensBtn" role="switch" aria-checked="true"><span class="switch" aria-hidden="true"></span>Color the passage by viewpoint</button><div class="evidence-list">${q.choices.map(c => `<div class="voice-card"><button type="button" class="ev ${c.id === q.answer ? 'right' : ''}" data-evidence="${c.id}" aria-expanded="false"><span class="letter">${c.id}</span><span>${esc(c.text)}<span class="ev-action">Inspect evidence</span></span></button><div class="voice-detail" hidden></div></div>`).join('')}</div><p class="tool-feedback" role="status"></p>`);

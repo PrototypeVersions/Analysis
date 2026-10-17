@@ -220,3 +220,23 @@ summary { cursor:pointer; color:var(--navy); padding:5px 0; }
   .credit { padding-inline:20px; }
 }
 @media (prefers-reduced-motion:reduce) { *,*:before,*:after { scroll-behavior:auto !important; transition:none !important; animation:none !important; } }
+
+/* Question 1: one explanation connecting source claim, new finding, and consequence. */
+.focused-explanation { border-top:0; padding-top:0; }
+.explanation-purpose { margin:0 0 12px; font-size:16px; }
+.explanation-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:18px 0; }
+.explanation-tabs button { border:1px solid #a4b3c2; border-radius:7px; background:white; padding:10px 12px; font-size:13px; text-align:center; min-height:42px; }
+.explanation-tabs button[aria-pressed=true] { color:white; background:var(--navy); border-color:var(--navy); }
+.reasoning-chain { display:grid; gap:13px; }
+.reasoning-step { padding:17px; border:1px solid var(--rule); border-radius:8px; }
+.reasoning-step h4 { display:flex; gap:9px; align-items:center; margin:0 0 7px; font-size:16px; line-height:1.4; }
+.step-number { display:inline-grid; place-items:center; width:24px; height:24px; flex-shrink:0; border:1px solid #8095a8; border-radius:50%; color:var(--navy); font-size:12px; }
+.reasoning-step .step-location { color:var(--ink-3); font-size:12px; margin:0 0 13px; }
+.reasoning-step blockquote { font:15px/1.65 var(--serif); margin:0 0 13px; padding:0 0 0 12px; border-left:3px solid #738eb6; }
+.reasoning-step p { margin:0; font-size:15px; line-height:1.65; }
+.passage-step { background:#f0f5fd; border-color:#b2c5df; }
+.finding-step { background:#fafbfc; }
+.conclusion-step { background:#f6f8fa; }
+.conclusion-step.is-answer { background:var(--support-tint); border-color:#a6c6b2; }
+.reasoning-step .choice-conclusion { margin-top:12px; font-weight:700; }
+@media (max-width:620px) { .reasoning-step { padding:14px; } .reasoning-step h4 { font-size:15px; } .explanation-tabs button { font-size:12px; padding:10px 6px; } }
