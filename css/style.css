@@ -229,12 +229,21 @@ mark.hl { background: var(--highlight); color: inherit; border-radius: 2px; curs
 .verdict.fits { border-color: var(--fits); } .verdict.fits .vhead { color: var(--fits); }
 .verdict.misses { border-color: #b8bfca; } .verdict.misses .vhead { color: var(--ink-3); }
 
+/* the box the question is about */
+.node.focus { outline: 2.5px dashed var(--navy); outline-offset: 4px; }
+.node.focus::before {
+  content: 'The question is about this box'; position: absolute; left: 0; bottom: calc(100% + 8px);
+  font-size: 12.5px; font-weight: 700; color: var(--navy); white-space: nowrap;
+}
+.map:has(.node.focus) { margin-top: 30px; }
+@media (max-width: 620px) { .map:has(.node.focus) { margin-top: 4px; } .node.focus { margin-top: 26px; } }
+
 /* map-it-yourself */
 .builder { border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px 16px; background: #fafbfc; }
 .bcount { margin: 0 0 6px; font-size: 13.5px; color: var(--ink-3); }
 .bquote { margin: 0 0 14px; font-family: var(--serif); font-size: 17px; line-height: 1.6; border-left: 3px solid var(--rule); padding-left: 14px; }
 .roles { display: flex; flex-wrap: wrap; gap: 8px; }
-.role { border: 1.5px solid var(--rule); background: var(--paper); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 14.5px; }
+.role { border: 1.5px solid var(--rule); text-align: left; background: var(--paper); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 14.5px; }
 .role:hover:not(:disabled) { border-color: var(--navy); color: var(--navy); }
 .role:disabled { cursor: default; opacity: .55; }
 .role.right { border-color: var(--support); background: var(--support-tint); color: var(--support); opacity: 1; font-weight: 700; }

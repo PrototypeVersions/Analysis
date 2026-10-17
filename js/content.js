@@ -44,12 +44,12 @@ export const VOICES = {
 
 // Skeleton of the argument. x, y, w, h are in a 640 × 380 layout.
 export const NODES = {
-  R1: { kind: 'Reason', where: 'paragraph 3', text: 'Aging has shaped how the work was seen, copied, and described', x: 20, y: 16, w: 280, h: 80 },
-  R2: { kind: 'Reason', where: 'paragraph 4', text: 'No cleaning can recover the original; it produces an interpretation', x: 340, y: 16, w: 280, h: 80 },
-  T: { kind: 'Thesis', where: 'paragraph 3', text: 'A painting’s history is part of what it is, so the restorers’ ideal is confused', x: 20, y: 150, w: 316, h: 82 },
-  OV: { kind: 'Opposing view', where: 'paragraph 2', text: 'Authentic means “as it left the artist’s hands”: strip away later accretions', x: 400, y: 150, w: 220, h: 82 },
+  R1: { kind: 'Reason for the claim', where: 'paragraph 3', text: 'Aging has shaped how the work was seen, copied, and described', x: 20, y: 16, w: 280, h: 80 },
+  R2: { kind: 'Reason for the claim', where: 'paragraph 4', text: 'No cleaning can recover the original; it produces an interpretation', x: 340, y: 16, w: 280, h: 80 },
+  T: { kind: 'Author’s main claim', where: 'paragraph 3', text: 'A painting’s history is part of what it is, so the restorers’ ideal is confused', x: 20, y: 150, w: 316, h: 82 },
+  OV: { kind: 'View the author rejects', where: 'paragraph 2', text: 'Authentic means “as it left the artist’s hands”: strip away later accretions', x: 400, y: 150, w: 220, h: 82 },
   Rec: { kind: 'Recommendation', where: 'paragraph 5', text: 'Restored paintings should wear their age, with repairs left visible', x: 20, y: 286, w: 316, h: 80 },
-  C: { kind: 'Concession', where: 'paragraph 5', text: 'Stabilizing active damage is still fine', x: 400, y: 286, w: 220, h: 80 },
+  C: { kind: 'Limit the author grants', where: 'paragraph 5', text: 'Stabilizing active damage is still fine', x: 400, y: 286, w: 220, h: 80 },
 };
 
 export const EDGES = [
@@ -64,6 +64,7 @@ export const QUESTIONS = [
   {
     skill: 'Reasoning within the text',
     tool: 'map',
+    focusNode: 'R2',
     stem: 'Which of the following findings, if true, would most seriously challenge the author’s argument in paragraph 4?',
     choices: [
       {
@@ -92,7 +93,7 @@ export const QUESTIONS = [
       },
     ],
     answer: 'A',
-    explanation: 'Paragraph 4 gives the author’s second reason for rejecting the restorers’ ideal: the ideal cannot be reached, because aging changes pigments in ways no cleaning can reverse. A finding that makes the ideal reachable removes that reason. Drop each choice into the argument below to see where it lands.',
+    explanation: 'Paragraph 4 gives the author’s second reason for rejecting the restorers’ ideal: the ideal cannot be reached, because aging changes pigments in ways no cleaning can reverse. A finding that makes the ideal reachable removes that reason. Below, first map the passage’s whole argument, then drop each choice into it to see where it lands.',
     takeaway: 'To weaken an argument, find the claim it depends on and look for a choice that makes that claim false. Choices that support the argument, or that concern something the argument never relies on, are traps.',
   },
   {
@@ -172,12 +173,12 @@ export const QUESTIONS = [
 ];
 
 // "Map it yourself": sort key sentences into their roles before seeing the finished map.
-export const ROLES = ['Thesis', 'Reason', 'Opposing view', 'Concession', 'Recommendation'];
+export const ROLES = ['Author’s main claim', 'Reason for the claim', 'View the author rejects', 'Limit the author grants', 'Recommendation'];
 export const BUILD = [
-  { id: 'p2s2', role: 'Opposing view', why: '“On this view” reports the restorers’ position, which the author goes on to reject.' },
-  { id: 'p3s1', role: 'Thesis', why: '“I want to suggest” marks the author’s own central claim, which the rest of the passage defends.' },
-  { id: 'p3s3', role: 'Reason', why: 'It supports the thesis: the aging of a painting is part of how the work was seen and used.' },
-  { id: 'p4s3', role: 'Reason', why: '“Nor can…” opens a second, independent reason: the restorers’ goal cannot actually be reached.' },
-  { id: 'p5s1', role: 'Concession', why: '“None of this means…” limits the author’s own argument: letting paintings decay is still not acceptable.' },
+  { id: 'p2s2', role: 'View the author rejects', why: '“On this view” reports the restorers’ position, which the author goes on to reject.' },
+  { id: 'p3s1', role: 'Author’s main claim', why: '“I want to suggest” marks the author’s own central claim, which the rest of the passage defends.' },
+  { id: 'p3s3', role: 'Reason for the claim', why: 'It supports the main claim: the aging of a painting is part of how the work was seen and used.' },
+  { id: 'p4s3', role: 'Reason for the claim', why: '“Nor can…” opens a second, independent reason: the restorers’ goal cannot actually be reached.' },
+  { id: 'p5s1', role: 'Limit the author grants', why: '“None of this means…” limits the author’s own argument: letting paintings decay is still not acceptable.' },
   { id: 'p5s4', role: 'Recommendation', why: 'It says what should be done, given the argument: let paintings wear their age, with repairs left visible.' },
 ];

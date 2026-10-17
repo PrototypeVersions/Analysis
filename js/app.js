@@ -1,4 +1,4 @@
-import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=2';
+import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=4';
 
 const $ = (id) => document.getElementById(id);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -132,7 +132,7 @@ const EFFECT_TEXT = {
 };
 const nodeName = (k) => {
   const n = NODES[k];
-  const article = { Reason: k === 'R1' ? 'the first reason' : 'the second reason', Concession: 'the concession', Thesis: 'the thesis', Recommendation: 'the recommendation', 'Opposing view': 'the opposing view' }[n.kind];
+  const article = { R1: 'the first reason', R2: 'the second reason', C: 'the limit the author grants', T: 'the author’s main claim', Rec: 'the recommendation', OV: 'the view the author rejects' }[k];
   return `${article} (${n.where})`;
 };
 
@@ -141,8 +141,8 @@ function buildMap(root, q, st) {
   if (st.tool.built) { buildMapInner(root, q, st); return; }
   let i = 0, firstTry = 0, missed = false;
   root.innerHTML = `
-    <h3>Map the argument yourself</h3>
-    <p class="hint">Before seeing the finished map, sort six key sentences into their roles. <button type="button" class="chip-all" id="skipBuild">Skip to the finished map</button></p>
+    <h3>Step 1 of 2: Map the whole passage’s argument</h3>
+    <p class="hint">To see what each answer choice attacks, you first need the shape of the passage’s argument. For each sentence below, choose the job it does in the passage as a whole. The sentences come from different paragraphs; each one lights up in the passage. <button type="button" class="chip-all" id="skipBuild">Skip to the finished map</button></p>
     <div class="builder">
       <p class="bcount" id="bCount"></p>
       <blockquote class="bquote" id="bQuote"></blockquote>
@@ -160,7 +160,7 @@ function buildMap(root, q, st) {
     root.querySelectorAll('.role').forEach((b) => { b.disabled = false; b.className = 'role'; });
     lightSentences([item.id]);
   };
-  const finish = () => { st.tool.built = true; root.innerHTML = ''; buildMapInner(root, q, st, firstTry); };
+  const finish = (skipped) => { st.tool.built = true; root.innerHTML = ''; buildMapInner(root, q, st, skipped ? undefined : firstTry); };
   root.querySelector('#bRoles').addEventListener('click', (e) => {
     const b = e.target.closest('.role');
     if (!b || b.disabled) return;
@@ -170,7 +170,7 @@ function buildMap(root, q, st) {
       if (!missed) firstTry++;
       b.classList.add('right');
       root.querySelectorAll('.role').forEach((x) => { x.disabled = true; });
-      fb.innerHTML = `<p class="ok"><b>Yes, ${item.role.toLowerCase()}.</b> ${esc(item.why)}</p>`;
+      fb.innerHTML = `<p class="ok"><b>Yes: ${item.role.charAt(0).toLowerCase() + item.role.slice(1)}.</b> ${esc(item.why)}</p>`;
       const next = root.querySelector('#bNext');
       next.hidden = false;
       next.textContent = i === BUILD.length - 1 ? 'See the finished map' : 'Next sentence';
@@ -179,19 +179,19 @@ function buildMap(root, q, st) {
       missed = true;
       b.classList.add('wrong');
       b.disabled = true;
-      fb.innerHTML = `<p class="no"><b>Not ${b.dataset.role.toLowerCase()}.</b> Look for signal words, and ask what job the sentence does in the argument.</p>`;
+      fb.innerHTML = `<p class="no"><b>Not quite.</b> Look for signal words, and ask what job this sentence does in the passage’s argument.</p>`;
     }
   });
-  root.querySelector('#bNext').addEventListener('click', () => { if (i < BUILD.length - 1) { i++; show(); } else finish(); });
-  root.querySelector('#skipBuild').addEventListener('click', finish);
+  root.querySelector('#bNext').addEventListener('click', () => { if (i < BUILD.length - 1) { i++; show(); } else finish(false); });
+  root.querySelector('#skipBuild').addEventListener('click', () => finish(true));
   show();
 }
 
 function buildMapInner(root, q, st, score) {
   if (score !== undefined) root.insertAdjacentHTML('beforeend', `<p class="bscore">You placed ${score} of ${BUILD.length} on the first try. Here is the whole argument.</p>`);
   root.insertAdjacentHTML('beforeend', `
-    <h3>Drop each choice into the argument</h3>
-    <p class="hint">This is the passage’s argument. Select a box to find it in the passage, then drop a choice in to see what it does.</p>
+    <h3>Step 2 of 2: Drop each choice into the argument</h3>
+    <p class="hint">This is the passage’s whole argument. The question asks about paragraph 4, which is the marked box, the author’s second reason. Drop each choice in to see what it does. Select any box to find it in the passage.</p>
     <div class="map" id="map">
       <svg viewBox="0 0 640 380" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         <defs>
@@ -213,6 +213,7 @@ function buildMapInner(root, q, st, score) {
     <div class="verdicts" id="verdicts" aria-live="polite"></div>`);
 
   const mapEl = root.querySelector('#map');
+  if (q.focusNode) mapEl.querySelector(`.node[data-node="${q.focusNode}"]`)?.classList.add('focus');
   mapEl.querySelectorAll('.node').forEach((n) => {
     n.addEventListener('click', () => {
       mapEl.querySelectorAll('.node.lit').forEach((x) => x.classList.remove('lit'));
