@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analysis: reasoning you can see</title>
+  <meta name="description" content="A CARS-style reading passage whose explanations are interactive: drop answer choices into the argument, see who is speaking, and test choices against the author’s rule.">
+  <meta name="author" content="Blake A. Myers">
+  <meta property="og:title" content="Analysis: reasoning you can see">
+  <meta property="og:description" content="A CARS-style passage whose explanations you can test, not just read.">
+  <meta property="og:image" content="assets/preview.png">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <span class="wordmark">Analysis</span>
+      <span class="tagline">One passage, three questions. Each explanation is something you can test.</span>
+    </div>
+    <nav class="itemnav" aria-label="Questions">
+      <button type="button" id="prevQ" class="navbtn" aria-label="Previous question">Previous</button>
+      <span id="qCounter" class="counter" aria-live="polite"></span>
+      <button type="button" id="nextQ" class="navbtn" aria-label="Next question">Next</button>
+    </nav>
+  </header>
+
+  <div class="toolstrip" role="toolbar" aria-label="Exam tools">
+    <button type="button" id="hlBtn" class="tool"><span class="hl-swatch" aria-hidden="true"></span>Highlight selection</button>
+    <span class="toolhint">Select text in the passage, then highlight it. Click a highlight to remove it. Use the cross-out button beside a choice to eliminate it.</span>
+  </div>
+
+  <main class="exam">
+    <section class="passage-col" aria-label="Passage">
+      <div class="voice-legend" id="voiceLegend" hidden>
+        <span class="key author">The author</span>
+        <span class="key restorers">The restorers’ view</span>
+        <span class="key critics">The critics’ view</span>
+        <span class="key narration">Background</span>
+      </div>
+      <article id="passage" class="passage"></article>
+    </section>
+
+    <section class="q-col" aria-label="Question">
+      <p class="skill" id="skill"></p>
+      <p class="stem" id="stem"></p>
+      <div class="choices" id="choices" role="radiogroup" aria-labelledby="stem"></div>
+      <button type="button" class="primary" id="submitBtn" disabled>Submit answer</button>
+
+      <div id="explain" class="explain" hidden>
+        <div id="result" class="result"></div>
+        <p class="explanation" id="explanation"></p>
+        <div id="tool" class="tool-area"></div>
+        <div class="takeaway">
+          <h3>Takeaway</h3>
+          <p id="takeaway"></p>
+        </div>
+        <button type="button" class="secondary" id="nextBtn">Next question</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="credit">
+    Original passage and questions by <a href="https://sites.google.com/view/blake-a-myers/home">Blake A. Myers</a>, written in the style of the MCAT Critical Analysis and Reasoning Skills section. Not affiliated with the AAMC. <a href="https://github.com/PrototypeVersions/Analysis">Source</a>
+  </footer>
+
+  <script type="module" src="js/app.js?v=1"></script>
+</body>
+</html>
