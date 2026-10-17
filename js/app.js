@@ -1,473 +1,226 @@
-import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=8';
+import { PASSAGE, QUESTIONS } from './content.js?v=9';
 
 const $ = (id) => document.getElementById(id);
+const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const narrow = () => window.matchMedia('(max-width: 1000px)').matches;
-const SENTENCES = Object.fromEntries(PASSAGE.flat().map((s) => [s.id, s]));
-const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const SENTENCES = Object.fromEntries(PASSAGE.flat().map(s => [s.id, s]));
+const passage = $('passage');
+const freshQuestion = () => ({ selected: null, submitted: false, struck: new Set(), tested: new Set(), evidence: null });
+let state = QUESTIONS.map(freshQuestion), view = 0;
+let lensOn = false;
 
-// ---------------------------------------------------------------- passage
-const passageEl = $('passage');
-passageEl.innerHTML = PASSAGE.map((para) => `<p>${para.map((s) => {
-  let html = esc(s.text);
-  if (s.cue) html = html.replace(esc(s.cue), `<span class="cue">${esc(s.cue)}</span>`);
-  return `<span class="s" data-id="${s.id}" data-voice="${s.voice}"${s.node ? ` data-node="${s.node}"` : ''}>${html}</span>`;
+passage.innerHTML = PASSAGE.map((paragraph, i) => `<p><span class="para-number" aria-label="Paragraph ${i + 1}">${i + 1}</span>${paragraph.map(s => {
+  let text = esc(s.text);
+  if (s.cue) text = text.replace(esc(s.cue), `<span class="cue">${esc(s.cue)}</span>`);
+  return `<span class="s" data-id="${s.id}" data-voice="${s.voice}" title="${s.voice === 'narration' ? 'Background' : s.voice === 'author' ? 'Author’s position' : s.voice === 'critics' ? 'Critics’ position' : 'Restorers’ position'}">${text}</span>`;
 }).join(' ')}</p>`).join('');
+$('wordCount').textContent = `${PASSAGE.flat().map(s => s.text).join(' ').split(/\s+/).length} words`;
 
-// "Lit" sentences are the app pointing at evidence (blue); the reader's own highlights stay yellow.
-function lightSentences(ids, scroll = true) {
-  passageEl.querySelectorAll('.s.lit').forEach((e) => e.classList.remove('lit'));
-  if (!ids || !ids.length) return;
-  let first = null;
-  for (const id of ids) {
-    passageEl.querySelectorAll(`.s[data-id="${id}"]`).forEach((e) => { e.classList.add('lit'); first = first || e; });
-  }
-  if (scroll && first && !narrow()) first.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+function lightSentences(ids = []) {
+  passage.querySelectorAll('.s.lit').forEach(el => el.classList.remove('lit'));
+  ids.forEach(id => passage.querySelector(`[data-id="${id}"]`)?.classList.add('lit'));
+  if (ids.length && !narrow()) passage.querySelector(`[data-id="${ids[0]}"]`)?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
 }
-const nodeSentences = (node) => PASSAGE.flat().filter((s) => s.node === node).map((s) => s.id);
+const nodeSentences = (node) => PASSAGE.flat().filter(s => s.node === node).map(s => s.id);
+function evidenceMarkup(ids) {
+  return ids.map(id => {
+    const s = SENTENCES[id];
+    const label = s.voice === 'narration' ? 'Background' : s.voice === 'author' ? 'Author’s position' : s.voice === 'critics' ? 'Critics’ position' : 'Restorers’ position';
+    return `<blockquote class="source-quote"><span>${label} · Paragraph ${id.match(/^p(\d+)/)[1]}</span>“${esc(s.text)}”</blockquote>`;
+  }).join('');
+}
+function setLens(on) {
+  lensOn = on;
+  passage.classList.toggle('voice-on', on);
+  $('voiceLegend').hidden = !on;
+  document.querySelectorAll('.lens-toggle').forEach(b => b.setAttribute('aria-checked', String(on)));
+}
 
-// Highlighter: wraps the current selection inside the passage; click a highlight to remove it.
-$('hlBtn').addEventListener('mousedown', (e) => e.preventDefault());
+// Wrap text nodes independently: selections spanning paragraphs never move sentence metadata.
+let savedRange = null;
+document.addEventListener('selectionchange', () => {
+  const selection = window.getSelection();
+  if (selection && !selection.isCollapsed && passage.contains(selection.anchorNode) && passage.contains(selection.focusNode)) savedRange = selection.getRangeAt(0).cloneRange();
+});
+$('hlBtn').addEventListener('mousedown', e => e.preventDefault());
 $('hlBtn').addEventListener('click', () => {
-  const sel = window.getSelection();
-  if (!sel || sel.isCollapsed) return;
-  const range = sel.getRangeAt(0);
-  if (!passageEl.contains(range.commonAncestorContainer)) return;
-  const mark = document.createElement('mark');
-  mark.className = 'hl';
-  try {
-    mark.appendChild(range.extractContents());
-    range.insertNode(mark);
-  } catch { return; }
-  sel.removeAllRanges();
-});
-passageEl.addEventListener('click', (e) => {
-  const m = e.target.closest('mark.hl');
-  if (!m) return;
-  const parent = m.parentNode;
-  while (m.firstChild) parent.insertBefore(m.firstChild, m);
-  m.remove();
-  parent.normalize();
-});
-
-// ---------------------------------------------------------------- navigation
-// view -1 is the warm-up; 0..2 are the questions.
-const freshQ = () => ({ selected: null, submitted: false, struck: new Set(), tool: {} });
-let state = QUESTIONS.map(freshQ);
-let warm = { i: 0, firstTry: 0, missed: false, done: false };
-let view = -1;
-
-function render() {
-  setLens(false);
-  lightSentences(null);
-  const isWarm = view === -1;
-  $('warmView').hidden = !isWarm;
-  $('qView').hidden = isWarm;
-  $('qCounter').textContent = isWarm ? 'Warm-up' : `Question ${view + 1} of ${QUESTIONS.length}`;
-  $('prevQ').disabled = isWarm;
-  $('nextQ').disabled = view === QUESTIONS.length - 1;
-  history.replaceState(null, '', isWarm ? '#warmup' : `#q${view + 1}`);
-  if (isWarm) renderWarm(); else renderQuestion();
-}
-const go = (i) => {
-  view = Math.max(-1, Math.min(QUESTIONS.length - 1, i));
-  render();
-  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
-};
-$('prevQ').addEventListener('click', () => go(view - 1));
-$('nextQ').addEventListener('click', () => go(view + 1));
-$('nextBtn').addEventListener('click', () => go(view + 1));
-$('startQ1').addEventListener('click', () => go(0));
-$('skipWarm').addEventListener('click', () => go(0));
-$('restartBtn').addEventListener('click', () => {
-  state = QUESTIONS.map(freshQ);
-  warm = { i: 0, firstTry: 0, missed: false, done: false };
-  go(-1);
-});
-
-// ---------------------------------------------------------------- argument map (shared)
-function mapMarkup() {
-  return `
-    <div class="map">
-      <svg viewBox="0 0 640 380" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8f98a7"/></marker>
-          <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#b3283a"/></marker>
-        </defs>
-        ${EDGES.map((e) => `<path class="edge ${e.kind}" d="${e.d}" marker-end="url(#${e.kind === 'rejects' ? 'arrowRed' : 'arrow'})"/>${e.label ? `<text class="edge-label" x="${e.lx}" y="${e.ly}">${e.label}</text>` : ''}`).join('')}
-      </svg>
-      ${Object.entries(NODES).map(([k, n]) => `
-        <button type="button" class="node ${k}" data-node="${k}"
-          style="left:${(n.x / 640) * 100}%; top:${(n.y / 380) * 100}%; width:${(n.w / 640) * 100}%; height:${(n.h / 380) * 100}%">
-          <span class="kind">${n.kind}, ${n.where}</span><span>${esc(n.text)}</span><span class="badges"></span>
-        </button>`).join('')}
-    </div>`;
-}
-function wireMap(mapEl) {
-  mapEl.querySelectorAll('.node').forEach((n) => {
-    n.addEventListener('click', () => {
-      mapEl.querySelectorAll('.node.lit').forEach((x) => x.classList.remove('lit'));
-      n.classList.add('lit');
-      lightSentences(nodeSentences(n.dataset.node));
-    });
-  });
-}
-
-// ---------------------------------------------------------------- warm-up: sort sentences by role
-function renderWarm() {
-  const root = $('warmTool');
-  if (warm.done) {
-    $('skipWarm').hidden = true;
-    $('startQ1').hidden = false;
-    root.innerHTML = `
-      <p class="bscore">You placed ${warm.firstTry} of ${BUILD.length} on the first try.</p>
-      <p class="hint">Here is the whole argument. Select any box to find it in the passage. Question 1’s explanation uses this same map.</p>
-      ${mapMarkup()}`;
-    wireMap(root.querySelector('.map'));
+  const range = savedRange;
+  if (!range || !passage.contains(range.commonAncestorContainer)) {
+    $('toolStatus').textContent = 'Select some passage text first.';
     return;
   }
-  $('skipWarm').hidden = false;
-  $('startQ1').hidden = true;
-  root.innerHTML = `
-    <div class="builder">
-      <p class="bcount" id="bCount"></p>
-      <blockquote class="bquote" id="bQuote"></blockquote>
-      <p class="bask">What job does this sentence do in the passage?</p>
-      <div class="roles" id="bRoles">${ROLES.map((r) => `<button type="button" class="role" data-role="${r}">${r}</button>`).join('')}</div>
-      <div class="bfeedback" id="bFb" aria-live="polite"></div>
-      <button type="button" class="primary" id="bNext" hidden>Next sentence</button>
-    </div>`;
-  const show = () => {
-    const item = BUILD[warm.i];
-    warm.missed = false;
-    root.querySelector('#bCount').textContent = `Sentence ${warm.i + 1} of ${BUILD.length}`;
-    root.querySelector('#bQuote').textContent = SENTENCES[item.id].text;
-    root.querySelector('#bFb').innerHTML = '';
-    root.querySelector('#bNext').hidden = true;
-    root.querySelectorAll('.role').forEach((b) => { b.disabled = false; b.className = 'role'; });
-    lightSentences([item.id]);
-  };
-  root.querySelector('#bRoles').addEventListener('click', (e) => {
-    const b = e.target.closest('.role');
-    if (!b || b.disabled) return;
-    const item = BUILD[warm.i];
-    const fb = root.querySelector('#bFb');
-    if (b.dataset.role === item.role) {
-      if (!warm.missed) warm.firstTry++;
-      b.classList.add('right');
-      root.querySelectorAll('.role').forEach((x) => { x.disabled = true; });
-      fb.innerHTML = `<p class="ok"><b>Yes: ${esc(item.role.charAt(0).toLowerCase() + item.role.slice(1))}.</b> ${esc(item.why)}</p>`;
-      const next = root.querySelector('#bNext');
-      next.hidden = false;
-      next.textContent = warm.i === BUILD.length - 1 ? 'See the whole argument' : 'Next sentence';
-      next.focus();
-    } else {
-      warm.missed = true;
-      b.classList.add('wrong');
-      b.disabled = true;
-      fb.innerHTML = '<p class="no"><b>Not quite.</b> Look for signal words, and ask what job this sentence does in the passage’s argument.</p>';
-    }
+  const walker = document.createTreeWalker(passage, NodeFilter.SHOW_TEXT);
+  const segments = [];
+  let node;
+  while ((node = walker.nextNode())) {
+    if (!node.parentElement.closest('.s') || node.parentElement.closest('mark') || !range.intersectsNode(node)) continue;
+    const start = node === range.startContainer ? range.startOffset : 0;
+    const end = node === range.endContainer ? range.endOffset : node.length;
+    if (end > start) segments.push({ node, start, end });
+  }
+  segments.reverse().forEach(({ node, start, end }) => {
+    const part = document.createRange();
+    part.setStart(node, start); part.setEnd(node, end);
+    const mark = document.createElement('mark'); mark.className = 'hl';
+    part.surroundContents(mark);
   });
-  root.querySelector('#bNext').addEventListener('click', () => {
-    if (warm.i < BUILD.length - 1) { warm.i++; show(); return; }
-    warm.done = true;
-    lightSentences(null);
-    renderWarm();
-  });
-  show();
+  window.getSelection()?.removeAllRanges(); savedRange = null;
+  $('toolStatus').textContent = 'Selection highlighted. Use Clear highlights to remove all markings.';
+});
+function clearHighlights() {
+  passage.querySelectorAll('mark.hl').forEach(mark => mark.replaceWith(...mark.childNodes));
+  passage.normalize(); savedRange = null;
 }
+$('clearHL').addEventListener('click', () => { clearHighlights(); $('toolStatus').textContent = 'Highlights cleared.'; });
+passage.addEventListener('click', e => {
+  const mark = e.target.closest('mark.hl');
+  if (mark) { mark.replaceWith(...mark.childNodes); passage.normalize(); savedRange = null; }
+});
 
-// ---------------------------------------------------------------- questions
-const strikeIcon = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M5 4.5c.5-1.3 1.7-2 3.2-2 1.8 0 3 .9 3.3 2.2M5 11.3c.4 1.4 1.6 2.2 3.4 2.2 1.9 0 3.1-1 3.1-2.4" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>';
+function go(next, focus = true) {
+  view = [-2, 0, 1, 2].includes(next) ? next : 0;
+  render();
+  if (focus) {
+    const target = $(view === -2 ? 'summaryTitle' : 'stem');
+    target.focus({ preventScroll: true });
+    $('questionPanel').scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
+  }
+}
+function render() {
+  setLens(false); lightSentences();
+  $('summaryView').hidden = view !== -2;
+  $('qView').hidden = view < 0;
+  $('qCounter').textContent = view === -2 ? 'Session review' : `Question ${view + 1} of ${QUESTIONS.length}`;
+  document.querySelectorAll('[data-go]').forEach(b => {
+    if (Number(b.dataset.go) === view) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+  });
+  history.replaceState(null, '', view === -2 ? '#review' : `#q${view + 1}`);
+  if (view === -2) renderSummary(); else renderQuestion();
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(Number(b.dataset.go))));
+$('prevQ').addEventListener('click', () => go(view - 1));
+$('nextQ').addEventListener('click', () => go(view === QUESTIONS.length - 1 ? -2 : view + 1));
+$('restartBtn').addEventListener('click', () => { state = QUESTIONS.map(freshQuestion); clearHighlights(); go(0); });
+$('toPassage').addEventListener('click', () => { $('readingPanel').focus(); $('readingPanel').scrollIntoView({ block: 'start' }); });
+$('toQuestion').addEventListener('click', () => { $('questionPanel').focus(); $('questionPanel').scrollIntoView({ block: 'start' }); });
 
 function renderQuestion() {
   const q = QUESTIONS[view], st = state[view];
-  $('skill').textContent = `CARS skill: ${q.skill}`;
+  $('skill').textContent = `${q.activity} · ${q.skill}`;
   $('stem').textContent = q.stem;
-  const choicesEl = $('choices');
-  choicesEl.classList.toggle('locked', st.submitted);
-  choicesEl.innerHTML = q.choices.map((c) => {
-    const cls = ['choice'];
-    if (st.struck.has(c.id)) cls.push('struck');
-    if (st.submitted && c.id === q.answer) cls.push('correct');
-    if (st.submitted && c.id === st.selected && c.id !== q.answer) cls.push('wrong');
-    return `<label class="${cls.join(' ')}" data-id="${c.id}">
-      <input type="radio" name="q" value="${c.id}" ${st.selected === c.id ? 'checked' : ''} ${st.submitted ? 'disabled' : ''}>
-      <span class="letter">${c.id}</span><span class="ctext">${esc(c.text)}</span>
-      <button type="button" class="strike" data-strike="${c.id}" aria-label="Cross out choice ${c.id}" title="Cross out">${strikeIcon}</button>
-    </label>`;
+  $('answerHint').hidden = st.submitted;
+  $('choices').classList.toggle('locked', st.submitted);
+  $('choices').innerHTML = q.choices.map(c => {
+    const correct = st.submitted && c.id === q.answer, wrong = st.submitted && c.id === st.selected && !correct;
+    return `<div class="choice ${st.struck.has(c.id) ? 'struck' : ''} ${correct ? 'correct' : ''} ${wrong ? 'wrong' : ''}" data-id="${c.id}"><label class="answer-label"><input type="radio" name="answer" value="${c.id}" ${st.selected === c.id ? 'checked' : ''} ${st.submitted ? 'disabled' : ''}><span class="letter">${c.id}</span><span class="ctext">${esc(c.text)}${correct ? '<strong class="answer-tag">Correct answer</strong>' : wrong ? '<strong class="answer-tag">Your answer</strong>' : ''}</span></label><button type="button" class="strike" data-strike="${c.id}" aria-label="Cross out choice ${c.id}" aria-pressed="${st.struck.has(c.id)}" ${st.submitted ? 'hidden' : ''}><span aria-hidden="true">⊖</span></button></div>`;
   }).join('');
-  $('submitBtn').hidden = st.submitted;
-  $('submitBtn').disabled = !st.selected;
+  $('submitBtn').hidden = st.submitted; $('submitBtn').disabled = !st.selected;
   $('explain').hidden = !st.submitted;
-  if (st.submitted) renderExplanation();
+  $('prevQ').disabled = view === 0;
+  $('nextQ').textContent = view === QUESTIONS.length - 1 ? 'Review this session →' : 'Next question →';
+  $('tool').innerHTML = '';
+  if (st.submitted) renderExplanation(q, st);
 }
-
-$('choices').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-strike]');
-  if (!b) return;
-  e.preventDefault();
+$('choices').addEventListener('change', e => {
   const st = state[view];
-  const id = b.dataset.strike;
-  if (st.struck.has(id)) st.struck.delete(id); else st.struck.add(id);
-  b.closest('.choice').classList.toggle('struck', st.struck.has(id));
-});
-$('choices').addEventListener('change', (e) => {
-  state[view].selected = e.target.value;
+  if (!st || st.submitted || e.target.name !== 'answer') return;
+  st.selected = e.target.value; st.struck.delete(st.selected);
+  e.target.closest('.choice').classList.remove('struck');
+  e.target.closest('.choice').querySelector('.strike').setAttribute('aria-pressed', 'false');
   $('submitBtn').disabled = false;
 });
-$('submitBtn').addEventListener('click', () => {
-  const st = state[view];
-  if (!st.selected) return;
-  st.submitted = true;
-  render();
-  $('explain').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+$('choices').addEventListener('click', e => {
+  const button = e.target.closest('[data-strike]'), st = state[view];
+  if (!button || !st || st.submitted) return;
+  const id = button.dataset.strike;
+  if (st.struck.has(id)) st.struck.delete(id); else {
+    st.struck.add(id);
+    if (st.selected === id) { st.selected = null; button.closest('.choice').querySelector('input').checked = false; $('submitBtn').disabled = true; }
+  }
+  button.closest('.choice').classList.toggle('struck', st.struck.has(id));
+  button.setAttribute('aria-pressed', String(st.struck.has(id)));
 });
-
-// Every explanation has the same order: result, why the answer is right,
-// a tool tied to this question, then the educational objective.
-function renderExplanation() {
-  const q = QUESTIONS[view], st = state[view];
-  const ok = st.selected === q.answer;
-  const res = $('result');
-  res.className = `result ${ok ? 'ok' : 'no'}`;
-  res.textContent = ok ? 'Correct.' : `Incorrect. You chose ${st.selected}; the answer is ${q.answer}.`;
-  $('whyHead').textContent = `Why ${q.answer} is correct`;
+$('submitBtn').addEventListener('click', () => {
+  const st = state[view]; if (!st?.selected || st.submitted) return;
+  st.submitted = true; render();
+  $('result').focus({ preventScroll: true });
+  $('explain').scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
+});
+function renderExplanation(q, st) {
+  const correct = st.selected === q.answer;
+  $('result').className = `result ${correct ? 'ok' : 'no'}`;
+  $('result').textContent = correct ? `Correct — ${q.answer}.` : `You chose ${st.selected}. The best answer is ${q.answer}.`;
+  $('whyHead').textContent = `Why ${q.answer} is best supported`;
   $('explanation').textContent = q.explanation;
   $('takeaway').textContent = q.takeaway;
-  const last = view === QUESTIONS.length - 1;
-  $('nextBtn').hidden = last;
-  $('restartBtn').hidden = !last;
-  const tool = $('tool');
-  tool.innerHTML = `<h3>${esc(q.toolHead)}</h3>`;
-  ({ map: buildMap, voice: buildVoice, principle: buildPrinciple })[q.tool](tool, q, st);
-}
-const yourPick = (q, st, id) => id === st.selected && id !== q.answer;
-
-// ---------------------------------------------------------------- Q1 tool: test each choice against the map
-// The answer choices sit right under the map, each with its full text. Testing one sends its
-// letter to the part of the argument it affects, and the result appears in the same card.
-const EFFECT_TEXT = {
-  undercuts: (n) => `Undercuts ${n}`,
-  supports: (n) => `Supports ${n}`,
-  fits: (n) => `Fits ${n}`,
-  misses: () => 'Doesn’t connect to any part of the argument',
-};
-const nodeName = (k) => {
-  const article = { R1: 'the first reason', R2: 'the second reason', C: 'the limit the author grants', T: 'the author’s main claim', Rec: 'the recommendation', OV: 'the view the author rejects' }[k];
-  return `${article} (${NODES[k].where})`;
-};
-
-function buildMap(root, q, st) {
-  // Restate the question beside the map so the link between them is visible.
-  const stem = esc(q.stem).replace(esc(q.stemFocus), `<b>${esc(q.stemFocus)}</b>`);
-  root.insertAdjacentHTML('beforeend', `
-    <p class="qrecap"><span class="qrecap-label">The question</span>${stem}</p>
-    <p class="hint lead">${esc(q.toolIntro)}${warm.done ? ' This is the same map you built in the warm-up.' : ''}</p>
-    ${mapMarkup()}
-    <div class="testhead">
-      <h4>Answer choices</h4>
-      <button type="button" class="chip-all" id="testAll">Test all four</button>
-    </div>
-    <div class="testlist" id="testList">
-      ${q.choices.map((c) => `
-        <div class="tcard" data-id="${c.id}">
-          <div class="trow">
-            <span class="letter">${c.id}</span>
-            <span class="ttext">${esc(c.text)}${yourPick(q, st, c.id) ? '<span class="yours">Your answer</span>' : ''}</span>
-            <button type="button" class="tbtn" data-choice="${c.id}">Test choice ${c.id}</button>
-          </div>
-          <div class="tresult" aria-live="polite" hidden></div>
-        </div>`).join('')}
-    </div>`);
-
-  const mapEl = root.querySelector('.map');
-  const list = root.querySelector('#testList');
-  wireMap(mapEl);
-  if (q.focusNode) {
-    const fn = mapEl.querySelector(`.node[data-node="${q.focusNode}"]`);
-    if (fn) { fn.classList.add('focus'); fn.dataset.focusLabel = q.focusLabel; }
-    lightSentences(nodeSentences(q.focusNode));
-  }
-  st.tool.tested = st.tool.tested || [];
-  const tested = new Set();
-  list.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-choice]');
-    if (b) { test(b.dataset.choice); return; }
-    // Selecting a tested card points at its part of the argument again.
-    const card = e.target.closest('.tcard.tested');
-    if (card) {
-      const c = q.choices.find((x) => x.id === card.dataset.id);
-      if (c.target) pointAt(c.target);
-    }
-  });
-  root.querySelector('#testAll').addEventListener('click', () => {
-    q.choices.forEach((c, i) => setTimeout(() => test(c.id), reduceMotion ? 0 : i * 750));
-  });
-  // Restore earlier results instantly when revisiting the question.
-  st.tool.tested.forEach((id) => test(id, true));
-
-  function pointAt(nodeKey) {
-    mapEl.querySelectorAll('.node.lit').forEach((x) => x.classList.remove('lit'));
-    mapEl.querySelector(`.node[data-node="${nodeKey}"]`)?.classList.add('lit');
-    lightSentences(nodeSentences(nodeKey));
-  }
-
-  function test(id, instant = false) {
-    if (tested.has(id)) return;
-    tested.add(id);
-    if (!st.tool.tested.includes(id)) st.tool.tested.push(id);
-    const c = q.choices.find((x) => x.id === id);
-    const card = list.querySelector(`.tcard[data-id="${id}"]`);
-    const btn = card.querySelector('.tbtn');
-    btn.disabled = true;
-    const target = c.target ? mapEl.querySelector(`.node[data-node="${c.target}"]`) : null;
-    const land = () => {
-      if (target) {
-        target.classList.remove('hit-supports', 'hit-undercuts', 'hit-fits');
-        target.classList.add(`hit-${c.effect}`);
-        target.querySelector('.badges').insertAdjacentHTML('beforeend', `<span class="badge ${c.effect}" title="Choice ${id}">${id}</span>`);
-        if (c.effect === 'undercuts') {
-          target.classList.add('cracked');
-          if (!instant && !reduceMotion) { target.classList.add('shake'); setTimeout(() => target.classList.remove('shake'), 500); }
-        }
-        if (!instant) pointAt(c.target);
-      }
-      showResult(c, card);
-    };
-    if (instant || reduceMotion) { land(); return; }
-    // The choice's letter travels from its card to the part of the map it affects.
-    const from = card.querySelector('.letter').getBoundingClientRect();
-    const flyer = document.createElement('div');
-    flyer.className = 'flyer';
-    flyer.textContent = id;
-    flyer.style.left = `${from.left + from.width / 2 - 17}px`;
-    flyer.style.top = `${from.top + from.height / 2 - 17}px`;
-    document.body.appendChild(flyer);
-    const to = (target || mapEl).getBoundingClientRect();
-    const tx = (target ? to.right - 12 : to.left + to.width / 2) - (from.left + from.width / 2);
-    const ty = (target ? to.top - 4 : to.top + to.height * 0.55) - (from.top + from.height / 2);
-    const frames = target
-      ? [{ transform: 'translate(0,0) scale(1)' }, { transform: `translate(${tx * 0.55}px, ${ty * 0.55 - 60}px) scale(1.15)`, offset: 0.55 }, { transform: `translate(${tx}px, ${ty}px) scale(.8)` }]
-      : [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${tx}px, ${ty}px)`, opacity: 1, offset: 0.6 }, { transform: `translate(${tx + 80}px, ${ty + 40}px) rotate(25deg)`, opacity: 0 }];
-    flyer.animate(frames, { duration: target ? 700 : 1100, easing: 'cubic-bezier(.45,.05,.35,1)' }).onfinish = () => { flyer.remove(); land(); };
-  }
-
-  function showResult(c, card) {
-    let head = `${EFFECT_TEXT[c.effect](c.target ? nodeName(c.target) : '')}.`;
-    if (c.id === q.answer) head += ' This is the answer.';
-    card.classList.add('tested', c.effect);
-    card.querySelector('.tbtn').hidden = true;
-    const res = card.querySelector('.tresult');
-    res.hidden = false;
-    res.innerHTML = `<div class="vhead">${esc(head)}</div><p>${esc(c.rationale)}</p>`;
-  }
+  const root = $('tool'); root.innerHTML = `<h3>${esc(q.toolHead)}</h3>`;
+  ({ trace: buildTrace, voice: buildVoice, principle: buildPrinciple })[q.tool](root, q, st);
 }
 
-// ---------------------------------------------------------------- Q2 tool: voice lens
-const legend = $('voiceLegend');
-let lensOn = false;
-function setLens(on) {
-  lensOn = on;
-  passageEl.classList.toggle('voice-on', on);
-  legend.hidden = !on;
-  document.querySelectorAll('.lens-toggle').forEach((b) => b.setAttribute('aria-checked', String(on)));
+const effectLabels = { undercuts: 'Directly weakens paragraph 4', supports: 'Supports paragraph 3 instead', fits: 'Fits paragraph 5; leaves paragraph 4 intact', misses: 'Does not test paragraph 4’s claim' };
+function buildTrace(root, q, st) {
+  root.insertAdjacentHTML('beforeend', `<p class="hint">You have answered the question. Select a choice below to explore its explanation and see how it relates to the claim the question targets.</p>
+    <div class="target-claim"><span class="eyebrow">The claim being tested · Paragraph 4</span><p>Cleaning cannot fully recover an original appearance without interpretation.</p></div>
+    <div class="trace-options" role="group" aria-label="Explore answer explanations">${q.choices.map(c => `<button type="button" class="trace-button" data-choice="${c.id}" aria-pressed="false"><span class="letter">${c.id}</span><span>${esc(c.text)}</span></button>`).join('')}</div>
+    <div class="trace-detail" aria-live="polite"></div>`);
+  const trace = id => {
+    const c = q.choices.find(choice => choice.id === id);
+    st.evidence = id;
+    root.querySelectorAll('[data-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.choice === id)));
+    const ids = c.target ? nodeSentences(c.target) : ['p1s3'];
+    root.querySelector('.trace-detail').innerHTML = `<div class="verdict ${c.effect}"><p class="eyebrow">Choice ${id}${id === q.answer ? ' · Correct answer' : ''}</p><h4>${effectLabels[c.effect]}</h4><p>${esc(c.rationale)}</p></div><details class="source-details"><summary>Read the relevant passage evidence</summary>${evidenceMarkup(ids)}</details>`;
+    lightSentences(ids);
+  };
+  root.querySelectorAll('[data-choice]').forEach(button => button.addEventListener('click', () => trace(button.dataset.choice)));
+  trace(st.evidence || st.selected);
 }
-
 function buildVoice(root, q, st) {
-  root.insertAdjacentHTML('beforeend', `
-    <p class="hint">The passage is now colored by who is speaking in each sentence: the author, the restorers, the critics, or background. Select a choice to outline its evidence in blue and see whose words it rests on.</p>
-    <button type="button" class="lens-toggle" role="switch" aria-checked="false" id="lensBtn"><span class="switch" aria-hidden="true"></span>Color the passage by speaker</button>
-    <div class="evidence-list" id="evList">
-      ${q.choices.map((c) => `
-        <button type="button" class="ev ${c.id === q.answer ? 'right' : ''}" data-id="${c.id}" aria-pressed="false">
-          <span class="letter">${c.id}</span>
-          <span><span class="evtitle">${esc(c.text)}${yourPick(q, st, c.id) ? '<span class="yours">Your answer</span>' : ''}</span><p>${esc(c.rationale)}</p><span class="quotes"></span></span>
-        </button>`).join('')}
-    </div>`);
-  root.querySelector('#lensBtn').addEventListener('click', () => setLens(!lensOn));
-  const list = root.querySelector('#evList');
-  list.addEventListener('click', (e) => {
-    const b = e.target.closest('.ev');
-    if (!b) return;
-    const was = b.getAttribute('aria-pressed') === 'true';
-    list.querySelectorAll('.ev').forEach((x) => { x.setAttribute('aria-pressed', 'false'); x.querySelector('.quotes').innerHTML = ''; });
-    if (was) { lightSentences(null); return; }
-    b.setAttribute('aria-pressed', 'true');
-    const c = q.choices.find((x) => x.id === b.dataset.id);
-    lightSentences(c.evidence);
-    if (narrow()) {
-      // On small screens the passage is out of view, so quote the evidence inline.
-      b.querySelector('.quotes').innerHTML = c.evidence.map((id) => `<p class="inline-quote">“${esc(SENTENCES[id].text)}”</p>`).join('');
-    }
-  });
-  setLens(true);
-}
-
-// ---------------------------------------------------------------- Q3 tool: principle test
-const MARK = { yes: '✓', no: '✕', na: '–' };
-const MARK_LABEL = { yes: 'meets this part', no: 'breaks this part', na: 'doesn’t apply' };
-
-function buildPrinciple(root, q, st) {
-  root.insertAdjacentHTML('beforeend', `
-    <p class="hint">The author’s position, from ${q.ruleSource || 'the passage'}, works as a three-part rule. Select a part to see where it comes from in the passage, then run the test to check each response against all three parts.</p>
-    <div class="rule">
-      ${q.criteria.map((c) => `<button type="button" data-src="${c.source}"><b>${esc(c.label)}</b><span>${esc(c.note)}</span></button>`).join('')}
-    </div>
-    <button type="button" class="primary run" id="runTest">${st.tool.ran ? 'Run the test again' : 'Run the test'}</button>
-    <table class="grid">
-      <thead><tr><th scope="col">Response</th>${q.criteria.map((c) => `<th scope="col">${esc(c.label)}</th>`).join('')}</tr></thead>
-      <tbody>
-        ${q.choices.map((c) => `<tr class="row" data-id="${c.id}" tabindex="0" aria-selected="false">
-          <td><span class="plan"><span class="letter">${c.id}</span><span>${esc(c.text)}${yourPick(q, st, c.id) ? '<span class="yours">Your answer</span>' : ''}</span></span></td>
-          ${q.criteria.map((cr) => `<td><span class="mark ${c.checks[cr.id]}" aria-label="${MARK_LABEL[c.checks[cr.id]]}">${MARK[c.checks[cr.id]]}</span></td>`).join('')}
-        </tr>`).join('')}
-      </tbody>
-    </table>
-    <p class="markkey" aria-hidden="true">
-      <span><span class="mark yes on">✓</span>meets this part</span>
-      <span><span class="mark no on">✕</span>breaks it</span>
-      <span><span class="mark na on">–</span>doesn’t apply</span>
-    </p>
-    <div class="verdicts" id="pVerdict" aria-live="polite"></div>`);
-
-  root.querySelectorAll('.rule button').forEach((b) => b.addEventListener('click', () => lightSentences([b.dataset.src])));
-  const rows = [...root.querySelectorAll('tr.row')];
+  root.insertAdjacentHTML('beforeend', `<p class="hint">The colors mark whose position is being represented, even when the author reports someone else’s view. Background is narration by the author, not a fourth speaker. Choose an answer below to compare the relevant sentences; some evidence contradicts the choice.</p><button type="button" class="lens-toggle" id="lensBtn" role="switch" aria-checked="true"><span class="switch" aria-hidden="true"></span>Color the passage by viewpoint</button><div class="evidence-list">${q.choices.map(c => `<div class="voice-card"><button type="button" class="ev ${c.id === q.answer ? 'right' : ''}" data-evidence="${c.id}" aria-expanded="false"><span class="letter">${c.id}</span><span>${esc(c.text)}<span class="ev-action">Inspect evidence</span></span></button><div class="voice-detail" hidden></div></div>`).join('')}</div><p class="tool-feedback" role="status"></p>`);
+  $('lensBtn').addEventListener('click', () => setLens(!lensOn));
   const show = (id) => {
-    rows.forEach((r) => r.setAttribute('aria-selected', String(r.dataset.id === id)));
-    const c = q.choices.find((x) => x.id === id);
-    const passes = Object.values(c.checks).every((v) => v !== 'no');
-    let head = `${id} ${passes ? 'meets every part of the rule. This is the answer.' : 'breaks part of the rule.'}`;
-    if (yourPick(q, st, id)) head += ' You chose this one.';
-    root.querySelector('#pVerdict').innerHTML = `<div class="verdict ${passes ? 'supports' : 'undercuts'}"><div class="vhead">${esc(head)}</div><p>${esc(c.rationale)}</p></div>`;
+    st.evidence = id;
+    root.querySelectorAll('[data-evidence]').forEach(button => {
+      const active = button.dataset.evidence === id;
+      button.setAttribute('aria-expanded', String(active));
+      const detail = button.parentElement.querySelector('.voice-detail'); detail.hidden = !active;
+      if (active) { const c = q.choices.find(x => x.id === id); detail.innerHTML = `<p>${esc(c.rationale)}</p>${evidenceMarkup(c.evidence)}`; }
+    });
+    lightSentences(q.choices.find(c => c.id === id).evidence);
+    root.querySelector('.tool-feedback').textContent = `Evidence for evaluating choice ${id} is shown below that choice.`;
   };
-  rows.forEach((r) => {
-    r.addEventListener('click', () => show(r.dataset.id));
-    r.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(r.dataset.id); } });
-  });
-
-  const reveal = (instant) => {
-    rows.forEach((r) => r.classList.remove('pass'));
-    const marks = rows.flatMap((r) => [...r.querySelectorAll('.mark')]);
-    marks.forEach((m) => m.classList.remove('on'));
-    const finish = () => {
-      rows.forEach((r) => { if (r.dataset.id === q.answer) r.classList.add('pass'); });
-      show(q.answer);
-    };
-    if (instant || reduceMotion) { marks.forEach((m) => m.classList.add('on')); finish(); return; }
-    marks.forEach((m, i) => setTimeout(() => m.classList.add('on'), 140 * i + 100));
-    setTimeout(finish, 140 * marks.length + 300);
-  };
-  root.querySelector('#runTest').addEventListener('click', (e) => {
-    st.tool.ran = true;
-    e.currentTarget.textContent = 'Run the test again';
-    reveal(false);
-  });
-  if (st.tool.ran) reveal(true);
+  root.querySelectorAll('[data-evidence]').forEach(button => button.addEventListener('click', () => show(button.dataset.evidence)));
+  setLens(true); show(st.evidence || st.selected);
 }
-
-// ---------------------------------------------------------------- start
-const m = location.hash.match(/^#q([1-3])$/);
-view = m ? Number(m[1]) - 1 : -1;
-render();
-window.__analysis = { get state() { return state; }, get warm() { return warm; }, go };
+const MARKS = { yes: ['✓', 'Consistent'], no: ['✕', 'Conflicts'], unknown: ['?', 'Not specified'] };
+function buildPrinciple(root, q) {
+  root.insertAdjacentHTML('beforeend', `<p class="hint">Use two relevant priorities from paragraph 5. Compare the actions actually described; “not specified” means the choice does not give enough information for that check.</p><div class="rule">${q.criteria.map(c => `<button type="button" data-source="${c.source}"><b>${esc(c.label)}</b><span>${esc(c.note)}</span><span class="ev-action">Read source sentence</span></button>`).join('')}</div><div id="ruleSource" aria-live="polite"></div>
+    <div class="comparison-wrap"><table class="grid"><caption>How the four choices fit the passage</caption><thead><tr><th scope="col">Response</th>${q.criteria.map(c => `<th scope="col">${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${q.choices.map(c => `<tr class="${c.id === q.answer ? 'pass' : ''}"><th scope="row"><button type="button" class="plan" data-plan="${c.id}" aria-pressed="false"><span class="letter">${c.id}</span><span>${esc(c.text)}<span class="ev-action">Why this fits or fails</span></span></button></th>${q.criteria.map(cr => { const key = c.checks[cr.id]; return `<td data-label="${esc(cr.label)}"><span class="mark ${key} on" aria-hidden="true">${MARKS[key][0]}</span><span class="mark-text">${MARKS[key][1]}</span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
+    <div class="verdicts" id="pVerdict" aria-live="polite"></div><div class="counterfactual"><p class="eyebrow">Optional exploration · Change one condition</p><h4>What if the later layer is causing damage?</h4><div class="chips" role="group" aria-label="Condition of the later layer"><button class="chip" type="button" data-condition="stable" aria-pressed="true">Stable layer</button><button class="chip" type="button" data-condition="damage" aria-pressed="false">Damaging layer</button></div><p id="conditionResult" aria-live="polite"></p></div>`);
+  root.querySelectorAll('[data-source]').forEach(button => button.addEventListener('click', () => { lightSentences([button.dataset.source]); $('ruleSource').innerHTML = evidenceMarkup([button.dataset.source]); }));
+  const show = (id) => {
+    const c = q.choices.find(choice => choice.id === id);
+    root.querySelectorAll('[data-plan]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.plan === id)));
+    $('pVerdict').innerHTML = `<div class="verdict ${id === q.answer ? 'supports' : 'undercuts'}"><div class="vhead">${id === q.answer ? `${id} best fits the stated priorities` : `Why ${id} is less well supported`}</div><p>${esc(c.rationale)}</p></div>`;
+  };
+  root.querySelectorAll('[data-plan]').forEach(button => button.addEventListener('click', () => show(button.dataset.plan)));
+  const changeCondition = (condition) => {
+    root.querySelectorAll('[data-condition]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.condition === condition)));
+    $('conditionResult').textContent = condition === 'stable'
+      ? 'In the original question, the layer is stable. The author’s exception for active damage does not justify removal, so preserving the layer while showing the earlier work is best supported.'
+      : 'Active damage makes the qualification in paragraph 5 relevant: treatment to protect the object can be justified. The passage does not tell us which treatment is necessary, so it would not justify automatically removing the entire later layer. The original answer above applies to the stable-layer scenario.';
+    lightSentences(condition === 'stable' ? ['p5s3'] : ['p5s1', 'p5s2']);
+  };
+  root.querySelectorAll('[data-condition]').forEach(button => button.addEventListener('click', () => changeCondition(button.dataset.condition)));
+  show(q.answer); changeCondition('stable');
+}
+function renderSummary() {
+  $('summaryList').innerHTML = QUESTIONS.map((q, i) => {
+    const st = state[i];
+    const status = !st.submitted ? 'Not yet answered' : st.selected === q.answer ? `Answered ${st.selected} · Correct` : `Answered ${st.selected} · Review the evidence`;
+    return `<button type="button" class="summary-item" data-review="${i}"><span class="summary-number">0${i + 1}</span><span><strong>${q.activity}</strong><span>${status}</span></span><span aria-hidden="true">→</span></button>`;
+  }).join('');
+  $('summaryList').querySelectorAll('[data-review]').forEach(button => button.addEventListener('click', () => go(Number(button.dataset.review))));
+}
+const questionHash = location.hash.match(/^#q([1-3])$/);
+go(questionHash ? Number(questionHash[1]) - 1 : location.hash === '#review' ? -2 : 0, false);

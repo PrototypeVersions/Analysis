@@ -3,87 +3,86 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Analysis: reasoning you can see</title>
-  <meta name="description" content="A CARS-style reading passage whose explanations are interactive: drop answer choices into the argument, see who is speaking, and test choices against the author’s rule.">
+  <title>Analysis — Follow the reasoning</title>
+  <meta name="description" content="An interactive CARS learning example: read an original passage, answer three questions, and explore the evidence behind every choice.">
   <meta name="author" content="Blake A. Myers">
-  <meta property="og:title" content="Analysis: reasoning you can see">
-  <meta property="og:description" content="A CARS-style passage whose explanations you can test, not just read.">
-  <meta property="og:image" content="assets/preview.png">
+  <meta property="og:title" content="Analysis — Follow the reasoning">
+  <meta property="og:description" content="One passage. Three questions. Explanations you can explore.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=8">
+  <link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
+  <a class="skip-link" href="#questionPanel">Skip to the questions</a>
   <header class="bar">
-    <div class="brand">
-      <span class="wordmark">Analysis</span>
-      <span class="tagline">One passage: a short warm-up, then three questions. Each explanation is something you can test.</span>
-    </div>
-    <nav class="itemnav" aria-label="Questions">
-      <button type="button" id="prevQ" class="navbtn" aria-label="Previous question">Previous</button>
-      <span id="qCounter" class="counter" aria-live="polite"></span>
-      <button type="button" id="nextQ" class="navbtn" aria-label="Next question">Next</button>
+    <a class="wordmark" href="./">Analysis<span class="brand-note">A CARS learning studio</span></a>
+    <nav class="itemnav" aria-label="Learning activities">
+      <button type="button" class="navbtn" data-go="0" aria-label="Question 1">01</button>
+      <button type="button" class="navbtn" data-go="1" aria-label="Question 2">02</button>
+      <button type="button" class="navbtn" data-go="2" aria-label="Question 3">03</button>
+      <button type="button" class="navbtn" data-go="-2">Review</button>
     </nav>
   </header>
-
-  <div class="toolstrip" role="toolbar" aria-label="Exam tools">
+  <section class="intro" aria-labelledby="pageTitle">
+    <div>
+      <p class="eyebrow">Read carefully. Make a choice. Follow the evidence.</p>
+      <h1 id="pageTitle">Follow the reasoning.</h1>
+      <p>Read one original passage, answer three questions, then explore why each choice works or fails.</p>
+    </div>
+    <div class="intro-note"><strong>Untimed, guided practice</strong><span>Explanations may help with later questions. Take as long as you need; your results are for reflection.</span></div>
+  </section>
+  <div class="toolstrip" aria-label="Reading tools">
     <button type="button" id="hlBtn" class="tool"><span class="hl-swatch" aria-hidden="true"></span>Highlight selection</button>
-    <span class="toolhint">Select text in the passage, then highlight it. Click a highlight to remove it. Use the cross-out button beside a choice to eliminate it.</span>
+    <button type="button" id="clearHL" class="tool">Clear highlights</button>
+    <span class="toolhint">Select passage text to highlight it. Use the cross-out buttons to eliminate choices.</span>
+    <span id="toolStatus" class="sr-only" role="status"></span>
   </div>
-
   <main class="exam">
-    <section class="passage-col" aria-label="Passage">
+    <section class="passage-col" aria-labelledby="passageTitle" id="readingPanel" tabindex="-1">
+      <div class="passage-heading"><p class="eyebrow">Humanities · Original practice passage</p><span id="wordCount"></span></div>
+      <h2 id="passageTitle">Restoration and authenticity</h2>
+      <p class="passage-note">A constructed debate for close reading. Use the passage’s claims to answer; no art history knowledge is needed.</p>
       <div class="voice-legend" id="voiceLegend" hidden>
-        <span class="key author">The author</span>
-        <span class="key restorers">The restorers’ view</span>
-        <span class="key critics">The critics’ view</span>
-        <span class="key narration">Background</span>
+        <span class="key author">Author’s position</span><span class="key restorers">Restorers’ position</span><span class="key critics">Critics’ position</span><span class="key narration">Background</span>
       </div>
       <article id="passage" class="passage"></article>
+      <button class="secondary mobile-jump" type="button" id="toQuestion">Go to the question ↓</button>
     </section>
-
-    <section class="q-col" aria-label="Questions">
-      <div id="warmView" hidden>
-        <p class="skill">Before the questions</p>
-        <h2 class="wtitle">Warm-up: map the argument</h2>
-        <p class="wintro">Before answering CARS questions, it helps to know the shape of the passage’s argument: what the author claims, why, and what the author argues against. Sort six key sentences by the job each one does in the passage. Each sentence is marked in blue in the passage as you go.</p>
-        <div id="warmTool"></div>
-        <div class="wfoot">
-          <button type="button" class="primary" id="startQ1" hidden>Start Question 1</button>
-          <button type="button" class="chip-all" id="skipWarm">Skip to Question 1</button>
-        </div>
-      </div>
-
+    <section class="q-col" id="questionPanel" aria-label="Questions and guided review" tabindex="-1">
+      <div class="question-top"><span id="qCounter" class="eyebrow" aria-live="polite"></span><button type="button" class="chip-all mobile-jump" id="toPassage">Read passage ↑</button></div>
       <div id="qView" hidden>
         <p class="skill" id="skill"></p>
-        <p class="stem" id="stem"></p>
+        <h2 class="stem" id="stem" tabindex="-1"></h2>
+        <p class="hint" id="answerHint">Choose the best-supported answer, then check your reasoning.</p>
         <div class="choices" id="choices" role="radiogroup" aria-labelledby="stem"></div>
-        <button type="button" class="primary" id="submitBtn" disabled>Submit answer</button>
-
+        <button type="button" class="primary" id="submitBtn" disabled>Check answer</button>
         <div id="explain" class="explain" hidden>
-          <div id="result" class="result"></div>
+          <div id="result" class="result" tabindex="-1"></div>
           <h3 class="exhead" id="whyHead"></h3>
           <p class="explanation" id="explanation"></p>
           <div id="tool" class="tool-area"></div>
-          <div class="takeaway">
-            <h3>Educational objective</h3>
-            <p id="takeaway"></p>
-          </div>
-          <div class="endnav">
-            <button type="button" class="secondary" id="nextBtn">Next question</button>
-            <button type="button" class="secondary" id="restartBtn" hidden>Start over</button>
-          </div>
+          <div class="takeaway"><h3>Reasoning to take with you</h3><p id="takeaway"></p></div>
         </div>
+        <div class="endnav"><button type="button" class="secondary" id="prevQ">Previous question</button><button type="button" class="secondary" id="nextQ">Next question →</button></div>
+      </div>
+      <div id="summaryView" hidden>
+        <p class="eyebrow">Keep the reasoning, not just the answer</p>
+        <h2 class="wtitle" id="summaryTitle" tabindex="-1">Your review</h2>
+        <p class="hint">Revisit any question to compare all four choices. This short guided activity does not estimate an MCAT score.</p>
+        <div id="summaryList" class="summary-list"></div>
+        <div class="review-invite"><h3>Three habits to carry forward</h3><p>Target the precise claim. Separate the viewpoints. Apply the author’s priorities with their qualifications.</p></div>
+        <button type="button" class="secondary" id="restartBtn">Reset answers</button>
+        <p class="hint">Progress stays in this tab until you reload or reset.</p>
       </div>
     </section>
   </main>
-
   <footer class="credit">
-    Original passage and questions by <a href="https://sites.google.com/view/blake-a-myers/home">Blake A. Myers</a>, written in the style of the MCAT Critical Analysis and Reasoning Skills section. Not affiliated with the AAMC. <a href="https://github.com/PrototypeVersions/Analysis">Source</a>
+    <p>An independent learning prototype by <a href="https://sites.google.com/view/blake-a-myers/home">Blake A. Myers</a>. <a href="https://github.com/PrototypeVersions/Analysis">View source</a></p>
+    <details><summary>About the example and its CARS alignment</summary><p>Original practice material developed with AI assistance. The passage presents a constructed position, not professional conservation guidance. Question 1 evaluates new information; Question 2 connects perspectives across the text; Question 3 applies a position to a new case.</p><p>Skill labels follow the <a href="https://students-residents.aamc.org/whats-mcat-exam/critical-analysis-and-reasoning-skills-section-overview">AAMC’s CARS overview</a> and <a href="https://students-residents.aamc.org/media/9271/download">official content description</a>. This small teaching example is not a full exam simulation or a validated assessment, and is not affiliated with AAMC or UWorld.</p></details>
   </footer>
-
-  <script type="module" src="js/app.js?v=8"></script>
+  <noscript><p class="noscript">Enable JavaScript to use the passage, questions, and interactive explanations.</p></noscript>
+  <script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>

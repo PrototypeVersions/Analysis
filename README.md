@@ -1,21 +1,25 @@
-# Analysis
-
-A CARS-style reading passage whose explanations you can test instead of just read.
+# Analysis — Follow the reasoning
 
 **Live:** https://prototypeversions.github.io/Analysis/
 
-One original humanities passage, a short warm-up, and three questions.
+A focused demonstration of interactive CARS explanations: one original 504-word humanities passage and three questions. The learner reads the passage, answers a question, and explores the rationale for every option. There is no warm-up or separate argument-mapping quiz.
 
-**Warm-up: map the argument.** Before the questions, sort six key sentences by the job each does in the passage (main claim, reason, view the author rejects, limit the author grants, recommendation). The finished map is reused in Question 1’s explanation.
+1. **Evaluate new evidence — Reasoning beyond the text.** A focused explanation connects each hypothetical finding to the particular claim in paragraph 4. Weakening that reason does not automatically refute the whole argument.
+2. **Compare perspectives — Reasoning within the text.** A viewpoint lens and quoted evidence distinguish reported positions from the author's own position. Background narration is not treated as a separate speaker.
+3. **Apply a position — Reasoning beyond the text.** A comparison checks the choices against relevant passage priorities, distinguishing a conflict from an unspecified detail. An optional condition toggle explores why active damage would change the reasoning.
 
-Each question covers a different CARS skill, and every explanation follows the same order: why the answer is correct, an interactive tool tied to that question, then the educational objective.
+The two beyond-the-text tasks and one within-the-text task illustrate selected skills; this is not a claim to reproduce the full CARS blueprint. Definitions follow the [AAMC overview](https://students-residents.aamc.org/whats-mcat-exam/critical-analysis-and-reasoning-skills-section-overview) and [official content description](https://students-residents.aamc.org/media/9271/download).
 
-1. **Reasoning within the text (weaken).** Test each answer choice against the argument map to see whether it undercuts the reason the question is about, supports another reason, fits the limit the author grants, or doesn’t connect at all.
-2. **Foundations of comprehension (where does the author agree with the critics?).** A voice lens colors every sentence by who is speaking; selecting a choice outlines its evidence so you can see whose words it rests on.
-3. **Reasoning beyond the text (apply).** The author’s stance becomes a three-part rule, and each response is tested against every part.
+## Interaction and accessibility
 
-Exam tools: highlight passage text and cross out answer choices. Works on phones.
+- Native radio inputs, independent cross-out controls, visible keyboard focus, text labels for color-coded meanings, and source quotations beside explanations.
+- Question navigation, a session review, and reset. Progress is held only in memory in the current tab; reloading starts a fresh attempt.
+- Passage highlights preserve sentence boundaries and evidence associations, even across paragraphs.
+- Responsive reading and question panels, with links to move between them on smaller screens.
+- No accounts, analytics, scoring predictions, or time limit. Feedback is available after each answer and can inform later questions.
 
-Plain HTML, CSS, and JavaScript; no build step. All content lives in `js/content.js`.
+## Source
 
-Original passage and questions by [Blake A. Myers](https://sites.google.com/view/blake-a-myers/home), written in the style of the MCAT Critical Analysis and Reasoning Skills section. Not affiliated with the AAMC.
+Plain HTML, CSS, and ES modules; no build step. `js/content.js` contains the passage, choices, answer keys, and rationales. `js/app.js` handles interactions. GitHub Pages serves the repository root.
+
+Original practice material developed with AI assistance for Blake A. Myers. The constructed debate is for close reading, not professional conservation advice. This is an independent teaching prototype, not a validated assessment or a full exam simulation. It is not affiliated with AAMC or UWorld.
