@@ -240,3 +240,54 @@ summary { cursor:pointer; color:var(--navy); padding:5px 0; }
 .conclusion-step.is-answer { background:var(--support-tint); border-color:#a6c6b2; }
 .reasoning-step .choice-conclusion { margin-top:12px; font-weight:700; }
 @media (max-width:620px) { .reasoning-step { padding:14px; } .reasoning-step h4 { font-size:15px; } .explanation-tabs button { font-size:12px; padding:10px 6px; } }
+
+/* Compact, categorical diagrams: no scores, scales, or additional questions. */
+.claim-visual,.overlap-visual { margin:18px 0 20px; padding:20px 16px 15px; border:1px solid #cbd6df; border-radius:12px; background:linear-gradient(150deg,#fafcfe,#f4f7fa); }
+.claim-visual figcaption,.overlap-visual figcaption { text-align:center; }
+.claim-visual figcaption strong,.overlap-visual figcaption strong { display:block; font:600 18px/1.4 var(--serif); color:var(--ink); }
+.claim-visual .eyebrow,.overlap-visual .eyebrow { display:block; font-size:10px; margin-bottom:7px; }
+.comparison-diagram { display:grid; grid-template-columns:minmax(0,1fr) 66px minmax(0,1fr); gap:5px; margin-top:23px; align-items:start; }
+.comparison-side { display:flex; align-items:center; flex-direction:column; text-align:center; gap:10px; font-size:13px; line-height:1.45; }
+.side-label { color:var(--ink-2); font-size:12px; font-weight:700; }
+.logic-disc { display:grid; place-items:center; height:88px; width:88px; border:2px solid #647fa9; border-radius:50%; font:600 28px var(--serif); color:var(--navy); background:#e7effa; box-shadow:0 0 0 7px #f0f4fa; margin:5px 0 7px; }
+.finding-side .logic-disc { background:#fbf0d8; border-color:#af8440; color:#79500e; box-shadow:0 0 0 7px #fbf5e9; }
+.comparison-side>strong { font-size:13px; }
+.comparison-side>span:last-child { color:var(--ink-2); font-size:12px; }
+.comparison-bridge { margin-top:42px; display:flex; align-items:center; flex-direction:column; text-align:center; font-size:10px; line-height:1.4; color:var(--ink-3); }
+.comparison-bridge svg { width:66px; height:66px; overflow:visible; }
+.comparison-bridge path { fill:none; stroke:#91a1b1; stroke-width:1.5; }
+.comparison-bridge circle { fill:#fafcfe; stroke:#91a1b1; stroke-width:1.5; }
+.comparison-bridge text { text-anchor:middle; fill:var(--navy); font-size:29px; font-family:var(--sans); }
+.visual-conclusion { margin:20px 0 0; padding-top:13px; border-top:1px solid #d5dfe7; text-align:center; font-weight:700; font-size:14px; color:var(--navy); }
+.visual-key { margin:9px 0 0; text-align:center; font-size:12px; color:var(--ink-3); line-height:1.5; }
+.full-reasoning { margin-top:13px; }
+.full-reasoning>summary { font-size:14px; font-weight:700; padding:9px 0; }
+.full-reasoning[open]>.reasoning-chain { margin-top:10px; }
+.overlap-diagram { position:relative; aspect-ratio:540 / 320; width:100%; margin-top:12px; }
+.overlap-diagram svg { width:100%; height:100%; display:block; }
+.critics-circle { fill:#f0eaf8; stroke:#8a70ac; stroke-width:1.5; }
+.author-circle { fill:#e6f3ed; stroke:#59998d; stroke-width:1.5; }
+.shared-lens { fill:#dce6ee; stroke:#7e92a6; stroke-width:1.5; }
+.overlap-region { position:absolute; transform:translate(-50%,-50%); top:50%; border:1px solid transparent; background:transparent; border-radius:9px; text-align:center; padding:10px 4px; width:25%; min-height:90px; font-size:clamp(11px,1.15vw,14px); line-height:1.5; }
+.overlap-region strong { display:block; font-family:var(--sans); font-size:12px; margin-bottom:8px; }
+.overlap-region span { font-family:var(--serif); }
+.critics-region { left:24%; color:#593e7f; }
+.shared-region { left:50%; color:#233e59; width:24%; }
+.author-region { left:76%; color:#145e51; }
+.overlap-region:hover,.overlap-region[aria-pressed=true] { border-color:currentColor; background:#ffffff55; }
+.overlap-evidence:not(:empty) { margin-top:15px; padding-top:2px; border-top:1px solid var(--rule); text-align:left; }
+.claim-visual { animation:visual-appear .22s ease-out; }
+@keyframes visual-appear { from { opacity:.6; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+@media (max-width:620px) {
+  .claim-visual,.overlap-visual { padding:17px 11px 14px; }
+  .claim-visual figcaption strong,.overlap-visual figcaption strong { font-size:16px; }
+  .comparison-diagram { grid-template-columns:minmax(0,1fr) 43px minmax(0,1fr); gap:3px; }
+  .logic-disc { width:70px; height:70px; font-size:24px; box-shadow:0 0 0 5px #f0f4fa; }
+  .finding-side .logic-disc { box-shadow:0 0 0 5px #fbf5e9; }
+  .comparison-bridge { margin-top:40px; }
+  .comparison-bridge svg { width:43px; height:43px; }
+  .side-label,.comparison-side>strong { font-size:11px; }
+  .comparison-side>span:last-child { font-size:11px; }
+  .overlap-region { font-size:11px; min-height:80px; padding:6px 2px; }
+  .overlap-region strong { font-size:10px; margin-bottom:4px; }
+}

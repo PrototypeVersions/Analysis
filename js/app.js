@@ -1,4 +1,4 @@
-import { PASSAGE, QUESTIONS } from './content.js?v=10';
+import { PASSAGE, QUESTIONS } from './content.js?v=11';
 
 const $ = (id) => document.getElementById(id);
 const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -161,16 +161,42 @@ function renderExplanation(q, st) {
   ({ trace: buildTrace, voice: buildVoice, principle: buildPrinciple })[q.tool](root, q, st);
 }
 
+// Visual summaries are illustrations of the submitted question, not additional tasks.
+function claimComparison(id) {
+  const detail = {
+    A: { verdict: 'YES', topic: 'Exact recovery works', inference: 'The original appearance can be recovered.', relation: 'Direct conflict', meaning: 'A challenges the author’s claim.', symbol: '≠' },
+    B: { verdict: '?', topic: 'Visitor preference', inference: 'Preference does not establish exact recovery.', relation: 'No challenge', meaning: 'B leaves the author’s claim unchallenged.', symbol: '—' },
+    C: { verdict: '?', topic: 'Influence on later artists', inference: 'Historical influence does not establish exact recovery.', relation: 'No challenge', meaning: 'C supports a different point about history.', symbol: '—' },
+    D: { verdict: '?', topic: 'Treatment of damage', inference: 'Stabilization does not establish exact recovery.', relation: 'No challenge', meaning: 'D concerns repair, not exact recovery.', symbol: '—' }
+  }[id];
+  return `<figure class="claim-visual" aria-label="Visual comparison for answer ${id}">
+    <figcaption><span class="eyebrow">Visual summary · Question 1</span><strong>Exact recovery: claim and finding</strong></figcaption>
+    <div class="comparison-diagram">
+      <div class="comparison-side author-side"><span class="side-label">Author’s claim</span><span class="logic-disc">NO</span><strong>Only an approximation</strong><span>The original appearance cannot be fully recovered.</span></div>
+      <div class="comparison-bridge" aria-hidden="true"><svg viewBox="0 0 80 80"><path d="M0 40H80"/><circle cx="40" cy="40" r="23"/><text x="40" y="49">${detail.symbol}</text></svg><span>${detail.relation}</span></div>
+      <div class="comparison-side finding-side"><span class="side-label">If answer ${id} is true</span><span class="logic-disc">${detail.verdict}</span><strong>${detail.topic}</strong><span>${detail.inference}</span></div>
+    </div><p class="visual-conclusion">${detail.meaning}</p>${id === 'A' ? '' : '<p class="visual-key">? means this finding does not establish whether exact recovery is possible.</p>'}</figure>`;
+}
+function sharedPointVisual() {
+  return `<figure class="overlap-visual" aria-label="The critics and author share one conclusion, expressed in answer A">
+    <figcaption><span class="eyebrow">Visual summary · Question 2</span><strong>Different views. One shared conclusion.</strong></figcaption>
+    <div class="overlap-diagram"><svg viewBox="0 0 540 320" aria-hidden="true"><defs><clipPath id="criticsCircle"><circle cx="190" cy="160" r="145"/></clipPath></defs><circle class="critics-circle" cx="190" cy="160" r="145"/><circle class="author-circle" cx="350" cy="160" r="145"/><circle class="shared-lens" cx="350" cy="160" r="145" clip-path="url(#criticsCircle)"/></svg>
+      <button type="button" class="overlap-region critics-region" data-viewpoint="critics" aria-pressed="false" aria-label="Read the critics’ statement"><strong>Critics</strong><span>“invented<br>a new one”</span></button>
+      <button type="button" class="overlap-region shared-region" data-viewpoint="shared" aria-pressed="false" aria-label="Read the evidence for the shared point"><strong>Shared point</strong><span>Not simply<br>the original<br>recovered</span></button>
+      <button type="button" class="overlap-region author-region" data-viewpoint="author" aria-pressed="false" aria-label="Read the author’s statement"><strong>Author</strong><span>“produces<br>a new state”</span></button>
+    </div><p class="visual-conclusion">Answer A expresses this overlap.</p><p class="visual-key">Select a region to read its source. The overlap represents one point of agreement, not identical views.</p><div class="overlap-evidence" aria-live="polite"></div></figure>`;
+}
 function buildTrace(root, q, st) {
   root.classList.add('focused-explanation');
   root.insertAdjacentHTML('beforeend', `<p class="explanation-purpose"><strong>Question 1 asked:</strong> Which new finding would make the author’s claim less convincing?</p>
     <p class="hint">The buttons below explain the original answer options. They do not ask you to answer another question.</p>
     <div class="explanation-tabs" role="group" aria-label="Read an explanation for Question 1"><button type="button" data-choice="A" aria-pressed="false">Why A is correct</button><button type="button" data-choice="B" aria-pressed="false">Why B is incorrect</button><button type="button" data-choice="C" aria-pressed="false">Why C is incorrect</button><button type="button" data-choice="D" aria-pressed="false">Why D is incorrect</button></div>
-    <div class="reasoning-chain" aria-live="polite"></div>`);
+    <div class="claim-visual-host"></div><details class="full-reasoning"><summary>Read the reasoning step by step</summary><div class="reasoning-chain" aria-live="polite"></div></details>`);
   const explainChoice = id => {
     const c = q.choices.find(choice => choice.id === id);
     st.evidence = id;
     root.querySelectorAll('[data-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.choice === id)));
+    root.querySelector('.claim-visual-host').innerHTML = claimComparison(id);
     root.querySelector('.reasoning-chain').innerHTML = `
       <section class="reasoning-step passage-step"><h4><span class="step-number" aria-hidden="true">1</span>What the author claims</h4><p class="step-location">From paragraph 4 of the passage · highlighted in blue</p><blockquote>“${esc(SENTENCES.p4s3.text)}”</blockquote><p><strong>In plain language:</strong> Cleaning can only approximate the original appearance.</p></section>
       <section class="reasoning-step finding-step"><h4><span class="step-number" aria-hidden="true">2</span>What answer ${id} asks us to suppose</h4><p class="step-location">A hypothetical finding supplied by Question 1</p><p>${esc(c.text)}</p></section>
@@ -182,10 +208,13 @@ function buildTrace(root, q, st) {
   explainChoice(st.evidence || q.answer);
 }
 function buildVoice(root, q, st) {
+  root.insertAdjacentHTML('beforeend', sharedPointVisual());
   root.insertAdjacentHTML('beforeend', `<p class="hint">The colors mark whose position is being represented, even when the author reports someone else’s view. Background is narration by the author, not a fourth speaker. Choose an answer below to compare the relevant sentences; some evidence contradicts the choice.</p><button type="button" class="lens-toggle" id="lensBtn" role="switch" aria-checked="true"><span class="switch" aria-hidden="true"></span>Color the passage by viewpoint</button><div class="evidence-list">${q.choices.map(c => `<div class="voice-card"><button type="button" class="ev ${c.id === q.answer ? 'right' : ''}" data-evidence="${c.id}" aria-expanded="false"><span class="letter">${c.id}</span><span>${esc(c.text)}<span class="ev-action">Inspect evidence</span></span></button><div class="voice-detail" hidden></div></div>`).join('')}</div><p class="tool-feedback" role="status"></p>`);
   $('lensBtn').addEventListener('click', () => setLens(!lensOn));
   const show = (id) => {
     st.evidence = id;
+    root.querySelectorAll('[data-viewpoint]').forEach(button => button.setAttribute('aria-pressed', 'false'));
+    root.querySelector('.overlap-evidence').innerHTML = '';
     root.querySelectorAll('[data-evidence]').forEach(button => {
       const active = button.dataset.evidence === id;
       button.setAttribute('aria-expanded', String(active));
@@ -196,6 +225,15 @@ function buildVoice(root, q, st) {
     root.querySelector('.tool-feedback').textContent = `Evidence for evaluating choice ${id} is shown below that choice.`;
   };
   root.querySelectorAll('[data-evidence]').forEach(button => button.addEventListener('click', () => show(button.dataset.evidence)));
+  root.querySelectorAll('[data-viewpoint]').forEach(button => button.addEventListener('click', () => {
+    const region = button.dataset.viewpoint;
+    const ids = region === 'critics' ? ['p1s4'] : region === 'author' ? ['p4s3', 'p4s4'] : ['p1s4', 'p4s3'];
+    root.querySelectorAll('[data-viewpoint]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+    root.querySelectorAll('[data-evidence]').forEach(b => { b.setAttribute('aria-expanded', 'false'); b.parentElement.querySelector('.voice-detail').hidden = true; });
+    root.querySelector('.overlap-evidence').innerHTML = evidenceMarkup(ids);
+    lightSentences(ids);
+    root.querySelector('.tool-feedback').textContent = 'The selected viewpoint’s source appears directly beneath the illustration.';
+  }));
   setLens(true); show(st.evidence || st.selected);
 }
 const MARKS = { yes: ['✓', 'Consistent'], no: ['✕', 'Conflicts'], unknown: ['?', 'Not specified'] };
