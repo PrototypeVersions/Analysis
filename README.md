@@ -4,11 +4,15 @@ A CARS-style reading passage whose explanations you can test instead of just rea
 
 **Live:** https://prototypeversions.github.io/Analysis/
 
-One original humanities passage and three questions, each covering a different CARS skill and each explained with its own interactive tool:
+One original humanities passage, a short warm-up, and three questions.
 
-1. **Reasoning within the text (weaken).** First, sort six key sentences by the job each does in the passage (main claim, reason, view the author rejects, limit the author grants, recommendation). Then an argument map of the passage appears. Drop any answer choice into it to see whether the choice undercuts a reason, supports one, fits a concession, or doesn’t connect at all.
-2. **Foundations of comprehension (where does the author agree with the critics?).** A voice lens that colors every sentence by who is speaking: the author, the views the author reports, or background. Each choice’s evidence lights up in the passage.
-3. **Reasoning beyond the text (apply).** The author’s stance is turned into a three-part rule, and each plan is tested against every part.
+**Warm-up: map the argument.** Before the questions, sort six key sentences by the job each does in the passage (main claim, reason, view the author rejects, limit the author grants, recommendation). The finished map is reused in Question 1’s explanation.
+
+Each question covers a different CARS skill, and every explanation follows the same order: why the answer is correct, an interactive tool tied to that question, then the educational objective.
+
+1. **Reasoning within the text (weaken).** Drop each answer choice into the argument map to see whether it undercuts the reason the question is about, supports another reason, fits the limit the author grants, or doesn’t connect at all.
+2. **Foundations of comprehension (where does the author agree with the critics?).** A voice lens colors every sentence by who is speaking; selecting a choice outlines its evidence so you can see whose words it rests on.
+3. **Reasoning beyond the text (apply).** The author’s stance becomes a three-part rule, and each response is tested against every part.
 
 Exam tools: highlight passage text and cross out answer choices. Works on phones.
 

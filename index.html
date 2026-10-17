@@ -13,13 +13,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
   <header class="bar">
     <div class="brand">
       <span class="wordmark">Analysis</span>
-      <span class="tagline">One passage, three questions. Each explanation is something you can test.</span>
+      <span class="tagline">One passage: a short warm-up, then three questions. Each explanation is something you can test.</span>
     </div>
     <nav class="itemnav" aria-label="Questions">
       <button type="button" id="prevQ" class="navbtn" aria-label="Previous question">Previous</button>
@@ -44,21 +44,38 @@
       <article id="passage" class="passage"></article>
     </section>
 
-    <section class="q-col" aria-label="Question">
-      <p class="skill" id="skill"></p>
-      <p class="stem" id="stem"></p>
-      <div class="choices" id="choices" role="radiogroup" aria-labelledby="stem"></div>
-      <button type="button" class="primary" id="submitBtn" disabled>Submit answer</button>
-
-      <div id="explain" class="explain" hidden>
-        <div id="result" class="result"></div>
-        <p class="explanation" id="explanation"></p>
-        <div id="tool" class="tool-area"></div>
-        <div class="takeaway">
-          <h3>Takeaway</h3>
-          <p id="takeaway"></p>
+    <section class="q-col" aria-label="Questions">
+      <div id="warmView" hidden>
+        <p class="skill">Before the questions</p>
+        <h2 class="wtitle">Warm-up: map the argument</h2>
+        <p class="wintro">Before answering CARS questions, it helps to know the shape of the passage’s argument: what the author claims, why, and what the author argues against. Sort six key sentences by the job each one does in the passage. Each sentence is marked in blue in the passage as you go.</p>
+        <div id="warmTool"></div>
+        <div class="wfoot">
+          <button type="button" class="primary" id="startQ1" hidden>Start Question 1</button>
+          <button type="button" class="chip-all" id="skipWarm">Skip to Question 1</button>
         </div>
-        <button type="button" class="secondary" id="nextBtn">Next question</button>
+      </div>
+
+      <div id="qView" hidden>
+        <p class="skill" id="skill"></p>
+        <p class="stem" id="stem"></p>
+        <div class="choices" id="choices" role="radiogroup" aria-labelledby="stem"></div>
+        <button type="button" class="primary" id="submitBtn" disabled>Submit answer</button>
+
+        <div id="explain" class="explain" hidden>
+          <div id="result" class="result"></div>
+          <h3 class="exhead" id="whyHead"></h3>
+          <p class="explanation" id="explanation"></p>
+          <div id="tool" class="tool-area"></div>
+          <div class="takeaway">
+            <h3>Educational objective</h3>
+            <p id="takeaway"></p>
+          </div>
+          <div class="endnav">
+            <button type="button" class="secondary" id="nextBtn">Next question</button>
+            <button type="button" class="secondary" id="restartBtn" hidden>Start over</button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -67,6 +84,6 @@
     Original passage and questions by <a href="https://sites.google.com/view/blake-a-myers/home">Blake A. Myers</a>, written in the style of the MCAT Critical Analysis and Reasoning Skills section. Not affiliated with the AAMC. <a href="https://github.com/PrototypeVersions/Analysis">Source</a>
   </footer>
 
-  <script type="module" src="js/app.js?v=4"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>

@@ -89,7 +89,8 @@ a { color: var(--navy); text-underline-offset: 2px; }
 }
 .passage p:last-child { margin-bottom: 0; }
 .s { border-radius: 3px; transition: background-color .3s, color .3s, box-shadow .3s; }
-.s.lit { background: #fff3b8; box-shadow: 0 0 0 2px #fff3b8; }
+/* The app pointing at evidence is blue; the reader's own highlights are yellow. */
+.s.lit { background: #e2e9fb; box-shadow: 0 0 0 2px #e2e9fb, inset 0 -2px 0 var(--navy); }
 mark.hl { background: var(--highlight); color: inherit; border-radius: 2px; cursor: pointer; padding: 0 1px; }
 
 /* voice lens */
@@ -106,7 +107,12 @@ mark.hl { background: var(--highlight); color: inherit; border-radius: 2px; curs
 .voice-on .s[data-voice="critics"] { background: var(--critics-tint); box-shadow: inset 0 -2px 0 var(--critics); }
 .voice-on .s[data-voice="narration"] { color: var(--ink-3); }
 .voice-on .cue { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.voice-on .s.lit { background: #fff3b8; box-shadow: 0 0 0 2px #fff3b8; color: var(--ink); }
+/* With the voice lens on, evidence is outlined so the speaker color stays visible. */
+.voice-on .s.lit { outline: 2px solid var(--navy); outline-offset: 2px; color: var(--ink); }
+.voice-on .s[data-voice="author"].lit { background: var(--author-tint); box-shadow: inset 0 -2px 0 var(--author); }
+.voice-on .s[data-voice="restorers"].lit { background: var(--restorers-tint); box-shadow: inset 0 -2px 0 var(--restorers); }
+.voice-on .s[data-voice="critics"].lit { background: var(--critics-tint); box-shadow: inset 0 -2px 0 var(--critics); }
+.voice-on .s[data-voice="narration"].lit { background: #f1f3f5; box-shadow: none; }
 
 /* ---------------------------------------------------------------- question */
 .skill { margin: 0 0 6px; font-size: 14px; color: var(--ink-3); }
@@ -157,7 +163,24 @@ mark.hl { background: var(--highlight); color: inherit; border-radius: 2px; curs
 .takeaway { background: #eef2fb; border-radius: 10px; padding: 4px 18px 14px; margin-top: 22px; }
 .takeaway h3 { font-size: 15px; margin: 14px 0 4px; color: var(--navy); }
 .takeaway p { margin: 0; font-family: var(--serif); line-height: 1.6; }
-.tool-area h3 { font-size: 15px; margin: 0 0 10px; }
+.exhead { font-size: 15px; margin: 0 0 6px; }
+.tool-area { border-top: 1px solid var(--rule); padding-top: 18px; }
+.tool-area h3 { font-size: 15px; margin: 0 0 6px; }
+.endnav { display: flex; gap: 10px; flex-wrap: wrap; }
+.yours {
+  display: inline-block; margin-left: 8px; vertical-align: 1px; font-size: 12px; font-weight: 700; color: var(--undercut);
+  border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; line-height: 1.5;
+}
+.inline-quote { margin: 8px 0 0; font-family: var(--serif); color: var(--ink); }
+.markkey { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin: 2px 0 0; font-size: 13.5px; color: var(--ink-3); }
+.markkey > span { display: inline-flex; align-items: center; gap: 6px; }
+.markkey .mark { width: 20px; height: 20px; font-size: 11.5px; }
+
+/* warm-up */
+.wtitle { font-family: var(--serif); font-weight: 600; font-size: 24px; line-height: 1.25; margin: 0 0 8px; }
+.wintro { color: var(--ink-2); margin: 0 0 18px; max-width: 64ch; }
+.wfoot { display: flex; align-items: center; gap: 18px; margin-top: 16px; }
+.bask { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); font-weight: 700; }
 .hint { color: var(--ink-3); font-size: 14px; margin: 0 0 12px; }
 
 /* argument map */

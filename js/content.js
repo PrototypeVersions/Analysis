@@ -65,6 +65,7 @@ export const QUESTIONS = [
     skill: 'Reasoning within the text',
     tool: 'map',
     focusNode: 'R2',
+    toolHead: 'Where each choice lands in the argument',
     stem: 'Which of the following findings, if true, would most seriously challenge the author’s argument in paragraph 4?',
     choices: [
       {
@@ -89,16 +90,17 @@ export const QUESTIONS = [
         id: 'D',
         text: 'Stabilizing flaking paint sometimes requires adding new material to a painting’s surface.',
         target: 'C', effect: 'fits',
-        rationale: 'This fits the author’s concession in paragraph 5 that stabilizing damage is acceptable. It is consistent with the passage and leaves paragraph 4’s claim untouched.',
+        rationale: 'This fits the limit the author grants in paragraph 5: stabilizing damage is acceptable. It is consistent with the passage and leaves paragraph 4’s claim untouched.',
       },
     ],
     answer: 'A',
-    explanation: 'Paragraph 4 gives the author’s second reason for rejecting the restorers’ ideal: the ideal cannot be reached, because aging changes pigments in ways no cleaning can reverse. A finding that makes the ideal reachable removes that reason. Below, first map the passage’s whole argument, then drop each choice into it to see where it lands.',
-    takeaway: 'To weaken an argument, find the claim it depends on and look for a choice that makes that claim false. Choices that support the argument, or that concern something the argument never relies on, are traps.',
+    explanation: 'Paragraph 4 gives the author’s second reason for rejecting the restorers’ ideal: the ideal cannot be reached, because aging changes pigments in ways no cleaning can reverse. Choice A would remove that reason. If every original hue could be identified and restored, cleaning really could return a painting to its first state, and restoration would be discovery rather than interpretation.',
+    takeaway: 'To weaken an argument, find the claim it depends on, then choose the finding that would make that claim false. Here, paragraph 4 depends on the claim that no cleaning can recover the original. Choices that support the argument (C), fit it (D), or address something it never relies on (B) are traps.',
   },
   {
     skill: 'Foundations of comprehension',
     tool: 'voice',
+    toolHead: 'Whose words each choice relies on',
     stem: 'Based on the passage, the author would most likely agree with the critics described in paragraph 1 that:',
     choices: [
       {
@@ -127,18 +129,19 @@ export const QUESTIONS = [
       },
     ],
     answer: 'A',
-    explanation: 'This question asks where two voices overlap. The critics claim the restorers invented a new painting. The author never repeats that charge, but paragraph 4 reaches a related, more careful conclusion: cleaning yields a new state, an interpretation rather than the original. The right answer keeps that shared core and drops the accusation. Turn on the voice lens to compare the critics’ sentence with the author’s own, then check where each choice’s evidence comes from.',
-    takeaway: 'When a question asks whether the author agrees with someone, look for partial agreement. The right answer often keeps the shared core of a view and drops its strongest wording. A choice that repeats the other party’s exact charge is often the trap.',
+    explanation: 'This question asks where two voices overlap. The critics claim the restorers invented a new painting. The author never repeats that charge, but paragraph 4 reaches a related, more careful conclusion: cleaning yields a new state, an interpretation rather than the original. Choice A keeps that shared core and drops the accusation.',
+    takeaway: 'When a question asks whether the author agrees with someone, look for partial agreement. Here, the author shares the critics’ core point but not their charge of invention. The right answer usually keeps the shared core and drops the strongest wording; a choice that repeats the other party’s exact charge (B) is often the trap.',
   },
   {
     skill: 'Reasoning beyond the text',
     tool: 'principle',
+    toolHead: 'Each response tested against the author’s rule',
     stem: 'A museum learns that a seventeenth-century altarpiece was extensively overpainted in the nineteenth century by an artist who “corrected” its figures. The overpainting is stable and is not damaging the panel beneath it. Based on the passage, which response would the author most likely favor?',
     ruleSource: 'paragraphs 4 and 5',
     criteria: [
       { id: 'history', label: 'Keeps the work’s history', source: 'p5s3', note: 'Do not erase history for an approximate origin.' },
       { id: 'honest', label: 'Hides nothing', source: 'p5s4', note: 'A repair rather than a disguise.' },
-      { id: 'claim', label: 'Claims no recovered original', source: 'p4s4', note: 'Do not disguise interpretation as discovery.' },
+      { id: 'claim', label: 'Doesn’t claim to restore the original', source: 'p4s4', note: 'Do not disguise interpretation as discovery.' },
     ],
     choices: [
       {
@@ -167,12 +170,12 @@ export const QUESTIONS = [
       },
     ],
     answer: 'B',
-    explanation: 'The scenario has a twist: nothing is decaying, so the question is purely about history. The author treats a work’s later life, including later retouchings, as part of what it is. The best response keeps the overpainting, adds knowledge instead of subtracting history, and makes no claim to recover the original. Run the test to check each response against all three parts of the author’s rule.',
-    takeaway: 'For application questions, turn the author’s stance into a short rule, then test each choice against every part of it. Watch for choices that sound responsible, like keeping a record, but still break the rule.',
+    explanation: 'The scenario has a twist: nothing is decaying, so the question is purely about history. The author treats a work’s later life, including later retouchings, as part of what it is. Choice B keeps the overpainting, adds knowledge instead of subtracting history, and makes no claim to recover the original.',
+    takeaway: 'For application questions, turn the author’s stance into a short rule, then test each choice against every part of it. Here, every wrong response breaks at least one part, including C, which sounds responsible because it keeps a record.',
   },
 ];
 
-// "Map it yourself": sort key sentences into their roles before seeing the finished map.
+// Warm-up: sort key sentences by the job each does, before any question.
 export const ROLES = ['Author’s main claim', 'Reason for the claim', 'View the author rejects', 'Limit the author grants', 'Recommendation'];
 export const BUILD = [
   { id: 'p2s2', role: 'View the author rejects', why: '“On this view” reports the restorers’ position, which the author goes on to reject.' },
