@@ -1,4 +1,4 @@
-import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=5';
+import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=6';
 
 const $ = (id) => document.getElementById(id);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -244,12 +244,14 @@ function renderExplanation() {
 }
 const yourPick = (q, st, id) => id === st.selected && id !== q.answer;
 
-// ---------------------------------------------------------------- Q1 tool: drop choices into the map
+// ---------------------------------------------------------------- Q1 tool: test each choice against the map
+// The answer choices sit right under the map, each with its full text. Testing one sends its
+// letter to the part of the argument it affects, and the result appears in the same card.
 const EFFECT_TEXT = {
-  undercuts: (n) => `undercuts ${n}`,
-  supports: (n) => `supports ${n}`,
-  fits: (n) => `fits ${n}`,
-  misses: () => 'doesn’t connect to the argument',
+  undercuts: (n) => `Undercuts ${n}`,
+  supports: (n) => `Supports ${n}`,
+  fits: (n) => `Fits ${n}`,
+  misses: () => 'Doesn’t connect to any part of the argument',
 };
 const nodeName = (k) => {
   const article = { R1: 'the first reason', R2: 'the second reason', C: 'the limit the author grants', T: 'the author’s main claim', Rec: 'the recommendation', OV: 'the view the author rejects' }[k];
@@ -258,40 +260,63 @@ const nodeName = (k) => {
 
 function buildMap(root, q, st) {
   root.insertAdjacentHTML('beforeend', `
-    <p class="hint">This map shows the passage’s whole argument${warm.done ? ', the same one you built in the warm-up' : ''}. The question asks about paragraph 4, the marked box. Drop each choice in to see what it does to the argument. Select any box to find it in the passage.</p>
+    <p class="hint">The map shows the passage’s whole argument${warm.done ? ', the same one you built in the warm-up' : ''}. The question asks about paragraph 4, the marked box. Test each answer choice below to see which part of the argument it affects, and how. You can also select any box to find it in the passage.</p>
     ${mapMarkup()}
-    <div class="chips" id="chips">
-      ${q.choices.map((c) => `<button type="button" class="chip" data-choice="${c.id}">Drop in ${c.id}</button>`).join('')}
-      <button type="button" class="chip-all" id="dropAll">Drop in all four</button>
+    <div class="testhead">
+      <h4>Answer choices</h4>
+      <button type="button" class="chip-all" id="testAll">Test all four</button>
     </div>
-    <div class="verdicts" id="verdicts" aria-live="polite"></div>`);
+    <div class="testlist" id="testList">
+      ${q.choices.map((c) => `
+        <div class="tcard" data-id="${c.id}">
+          <div class="trow">
+            <span class="letter">${c.id}</span>
+            <span class="ttext">${esc(c.text)}${yourPick(q, st, c.id) ? '<span class="yours">Your answer</span>' : ''}</span>
+            <button type="button" class="tbtn" data-choice="${c.id}">Test choice ${c.id}</button>
+          </div>
+          <div class="tresult" aria-live="polite" hidden></div>
+        </div>`).join('')}
+    </div>`);
 
   const mapEl = root.querySelector('.map');
+  const list = root.querySelector('#testList');
   wireMap(mapEl);
   if (q.focusNode) {
     mapEl.querySelector(`.node[data-node="${q.focusNode}"]`)?.classList.add('focus');
     lightSentences(nodeSentences(q.focusNode));
   }
-  st.tool.dropped = st.tool.dropped || [];
-  const dropped = new Set();
-  const chips = root.querySelector('#chips');
-  chips.addEventListener('click', (e) => {
+  st.tool.tested = st.tool.tested || [];
+  const tested = new Set();
+  list.addEventListener('click', (e) => {
     const b = e.target.closest('[data-choice]');
-    if (b) drop(b.dataset.choice);
+    if (b) { test(b.dataset.choice); return; }
+    // Selecting a tested card points at its part of the argument again.
+    const card = e.target.closest('.tcard.tested');
+    if (card) {
+      const c = q.choices.find((x) => x.id === card.dataset.id);
+      if (c.target) pointAt(c.target);
+    }
   });
-  root.querySelector('#dropAll').addEventListener('click', () => {
-    q.choices.forEach((c, i) => setTimeout(() => drop(c.id), reduceMotion ? 0 : i * 750));
+  root.querySelector('#testAll').addEventListener('click', () => {
+    q.choices.forEach((c, i) => setTimeout(() => test(c.id), reduceMotion ? 0 : i * 750));
   });
-  // Restore previously dropped choices instantly when revisiting the question.
-  st.tool.dropped.forEach((id) => drop(id, true));
+  // Restore earlier results instantly when revisiting the question.
+  st.tool.tested.forEach((id) => test(id, true));
 
-  function drop(id, instant = false) {
-    if (dropped.has(id)) return;
-    dropped.add(id);
-    if (!st.tool.dropped.includes(id)) st.tool.dropped.push(id);
+  function pointAt(nodeKey) {
+    mapEl.querySelectorAll('.node.lit').forEach((x) => x.classList.remove('lit'));
+    mapEl.querySelector(`.node[data-node="${nodeKey}"]`)?.classList.add('lit');
+    lightSentences(nodeSentences(nodeKey));
+  }
+
+  function test(id, instant = false) {
+    if (tested.has(id)) return;
+    tested.add(id);
+    if (!st.tool.tested.includes(id)) st.tool.tested.push(id);
     const c = q.choices.find((x) => x.id === id);
-    const chip = chips.querySelector(`[data-choice="${id}"]`);
-    chip.classList.add('used');
+    const card = list.querySelector(`.tcard[data-id="${id}"]`);
+    const btn = card.querySelector('.tbtn');
+    btn.disabled = true;
     const target = c.target ? mapEl.querySelector(`.node[data-node="${c.target}"]`) : null;
     const land = () => {
       if (target) {
@@ -302,12 +327,13 @@ function buildMap(root, q, st) {
           target.classList.add('cracked');
           if (!instant && !reduceMotion) { target.classList.add('shake'); setTimeout(() => target.classList.remove('shake'), 500); }
         }
-        if (!instant) lightSentences(nodeSentences(c.target));
+        if (!instant) pointAt(c.target);
       }
-      addVerdict(c);
+      showResult(c, card);
     };
     if (instant || reduceMotion) { land(); return; }
-    const from = chip.getBoundingClientRect();
+    // The choice's letter travels from its card to the part of the map it affects.
+    const from = card.querySelector('.letter').getBoundingClientRect();
     const flyer = document.createElement('div');
     flyer.className = 'flyer';
     flyer.textContent = id;
@@ -323,18 +349,14 @@ function buildMap(root, q, st) {
     flyer.animate(frames, { duration: target ? 700 : 1100, easing: 'cubic-bezier(.45,.05,.35,1)' }).onfinish = () => { flyer.remove(); land(); };
   }
 
-  function addVerdict(c) {
-    const v = root.querySelector('#verdicts');
-    let head = `${c.id} ${EFFECT_TEXT[c.effect](c.target ? nodeName(c.target) : '')}.`;
+  function showResult(c, card) {
+    let head = `${EFFECT_TEXT[c.effect](c.target ? nodeName(c.target) : '')}.`;
     if (c.id === q.answer) head += ' This is the answer.';
-    if (yourPick(q, st, c.id)) head += ' You chose this one.';
-    const el = document.createElement('div');
-    el.className = `verdict ${c.effect}`;
-    el.dataset.id = c.id;
-    el.innerHTML = `<div class="vhead">${esc(head)}</div><p>${esc(c.rationale)}</p>`;
-    // keep verdicts in letter order
-    const after = [...v.children].find((x) => x.dataset.id > c.id);
-    v.insertBefore(el, after || null);
+    card.classList.add('tested', c.effect);
+    card.querySelector('.tbtn').hidden = true;
+    const res = card.querySelector('.tresult');
+    res.hidden = false;
+    res.innerHTML = `<div class="vhead">${esc(head)}</div><p>${esc(c.rationale)}</p>`;
   }
 }
 

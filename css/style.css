@@ -277,6 +277,38 @@ mark.hl { background: var(--highlight); color: inherit; border-radius: 2px; curs
 #bNext { margin-top: 14px; }
 .bscore { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px; background: var(--support-tint); color: var(--support); font-weight: 700; }
 
+/* answer choices under the map (Q1) */
+.testhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 6px 0 8px; }
+.testhead h4 { margin: 0; font-size: 14.5px; }
+.testlist { display: grid; gap: 8px; }
+.tcard { border: 1px solid var(--rule); border-left: 4px solid var(--rule); border-radius: 8px; padding: 10px 12px; background: var(--paper); }
+.trow { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; }
+.trow .letter { align-self: start; margin-top: 1px; }
+.ttext { line-height: 1.45; }
+.tbtn {
+  border: 1.5px solid var(--navy); background: var(--paper); color: var(--navy); border-radius: 999px;
+  padding: 5px 13px; cursor: pointer; font-weight: 700; font-size: 13.5px; white-space: nowrap;
+}
+.tbtn:hover:not(:disabled) { background: #eef2fb; }
+.tbtn:disabled { opacity: .5; cursor: default; }
+.tresult { margin: 10px 0 0 36px; animation: rise .35s ease-out; }
+.tresult .vhead { font-weight: 700; margin-bottom: 2px; }
+.tresult p { margin: 0; color: var(--ink-2); line-height: 1.55; }
+.tcard.tested { cursor: pointer; }
+.tcard.undercuts { border-left-color: var(--undercut); background: #fffafa; } .tcard.undercuts .vhead { color: var(--undercut); }
+.tcard.supports { border-left-color: var(--support); } .tcard.supports .vhead { color: var(--support); }
+.tcard.fits { border-left-color: var(--fits); } .tcard.fits .vhead { color: var(--fits); }
+.tcard.misses { border-left-color: #b8bfca; } .tcard.misses .vhead { color: var(--ink-3); }
+.tcard.undercuts .letter { background: var(--undercut); border-color: var(--undercut); color: #fff; }
+.tcard.supports .letter { background: var(--support); border-color: var(--support); color: #fff; }
+.tcard.fits .letter { background: var(--fits); border-color: var(--fits); color: #fff; }
+.tcard.misses .letter { background: #9aa3b1; border-color: #9aa3b1; color: #fff; }
+@media (max-width: 620px) {
+  .trow { grid-template-columns: 28px 1fr; }
+  .tbtn { grid-column: 2; justify-self: start; }
+  .tresult { margin-left: 0; }
+}
+
 /* voice tool */
 .lens-toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 14px; font-weight: 700; }
 .switch { width: 40px; height: 22px; border-radius: 999px; background: #c5ccd6; position: relative; transition: background .2s; flex-shrink: 0; }

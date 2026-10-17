@@ -10,7 +10,7 @@ One original humanities passage, a short warm-up, and three questions.
 
 Each question covers a different CARS skill, and every explanation follows the same order: why the answer is correct, an interactive tool tied to that question, then the educational objective.
 
-1. **Reasoning within the text (weaken).** Drop each answer choice into the argument map to see whether it undercuts the reason the question is about, supports another reason, fits the limit the author grants, or doesn’t connect at all.
+1. **Reasoning within the text (weaken).** Test each answer choice against the argument map to see whether it undercuts the reason the question is about, supports another reason, fits the limit the author grants, or doesn’t connect at all.
 2. **Foundations of comprehension (where does the author agree with the critics?).** A voice lens colors every sentence by who is speaking; selecting a choice outlines its evidence so you can see whose words it rests on.
 3. **Reasoning beyond the text (apply).** The author’s stance becomes a three-part rule, and each response is tested against every part.
 
