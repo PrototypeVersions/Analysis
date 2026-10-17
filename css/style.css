@@ -229,6 +229,22 @@ mark.hl { background: var(--highlight); color: inherit; border-radius: 2px; curs
 .verdict.fits { border-color: var(--fits); } .verdict.fits .vhead { color: var(--fits); }
 .verdict.misses { border-color: #b8bfca; } .verdict.misses .vhead { color: var(--ink-3); }
 
+/* map-it-yourself */
+.builder { border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px 16px; background: #fafbfc; }
+.bcount { margin: 0 0 6px; font-size: 13.5px; color: var(--ink-3); }
+.bquote { margin: 0 0 14px; font-family: var(--serif); font-size: 17px; line-height: 1.6; border-left: 3px solid var(--rule); padding-left: 14px; }
+.roles { display: flex; flex-wrap: wrap; gap: 8px; }
+.role { border: 1.5px solid var(--rule); background: var(--paper); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 14.5px; }
+.role:hover:not(:disabled) { border-color: var(--navy); color: var(--navy); }
+.role:disabled { cursor: default; opacity: .55; }
+.role.right { border-color: var(--support); background: var(--support-tint); color: var(--support); opacity: 1; font-weight: 700; }
+.role.wrong { border-color: var(--undercut); color: var(--undercut); text-decoration: line-through; }
+.bfeedback p { margin: 14px 0 0; line-height: 1.55; }
+.bfeedback .ok b { color: var(--support); }
+.bfeedback .no b { color: var(--undercut); }
+#bNext { margin-top: 14px; }
+.bscore { margin: 0 0 16px; padding: 10px 14px; border-radius: 8px; background: var(--support-tint); color: var(--support); font-weight: 700; }
+
 /* voice tool */
 .lens-toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 14px; font-weight: 700; }
 .switch { width: 40px; height: 22px; border-radius: 999px; background: #c5ccd6; position: relative; transition: background .2s; flex-shrink: 0; }

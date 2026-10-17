@@ -1,4 +1,4 @@
-import { PASSAGE, NODES, EDGES, QUESTIONS } from './content.js?v=1';
+import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=2';
 
 const $ = (id) => document.getElementById(id);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -136,7 +136,59 @@ const nodeName = (k) => {
   return `${article} (${n.where})`;
 };
 
+// First, an optional sorting step: place key sentences in their roles.
 function buildMap(root, q, st) {
+  if (st.tool.built) { buildMapInner(root, q, st); return; }
+  let i = 0, firstTry = 0, missed = false;
+  root.innerHTML = `
+    <h3>Map the argument yourself</h3>
+    <p class="hint">Before seeing the finished map, sort six key sentences into their roles. <button type="button" class="chip-all" id="skipBuild">Skip to the finished map</button></p>
+    <div class="builder">
+      <p class="bcount" id="bCount"></p>
+      <blockquote class="bquote" id="bQuote"></blockquote>
+      <div class="roles" id="bRoles">${ROLES.map((r) => `<button type="button" class="role" data-role="${r}">${r}</button>`).join('')}</div>
+      <div class="bfeedback" id="bFb" aria-live="polite"></div>
+      <button type="button" class="primary" id="bNext" hidden>Next sentence</button>
+    </div>`;
+  const show = () => {
+    const item = BUILD[i];
+    missed = false;
+    root.querySelector('#bCount').textContent = `Sentence ${i + 1} of ${BUILD.length}`;
+    root.querySelector('#bQuote').textContent = SENTENCES[item.id].text;
+    root.querySelector('#bFb').innerHTML = '';
+    root.querySelector('#bNext').hidden = true;
+    root.querySelectorAll('.role').forEach((b) => { b.disabled = false; b.className = 'role'; });
+    lightSentences([item.id]);
+  };
+  const finish = () => { st.tool.built = true; root.innerHTML = ''; buildMapInner(root, q, st, firstTry); };
+  root.querySelector('#bRoles').addEventListener('click', (e) => {
+    const b = e.target.closest('.role');
+    if (!b || b.disabled) return;
+    const item = BUILD[i];
+    const fb = root.querySelector('#bFb');
+    if (b.dataset.role === item.role) {
+      if (!missed) firstTry++;
+      b.classList.add('right');
+      root.querySelectorAll('.role').forEach((x) => { x.disabled = true; });
+      fb.innerHTML = `<p class="ok"><b>Yes, ${item.role.toLowerCase()}.</b> ${esc(item.why)}</p>`;
+      const next = root.querySelector('#bNext');
+      next.hidden = false;
+      next.textContent = i === BUILD.length - 1 ? 'See the finished map' : 'Next sentence';
+      next.focus();
+    } else {
+      missed = true;
+      b.classList.add('wrong');
+      b.disabled = true;
+      fb.innerHTML = `<p class="no"><b>Not ${b.dataset.role.toLowerCase()}.</b> Look for signal words, and ask what job the sentence does in the argument.</p>`;
+    }
+  });
+  root.querySelector('#bNext').addEventListener('click', () => { if (i < BUILD.length - 1) { i++; show(); } else finish(); });
+  root.querySelector('#skipBuild').addEventListener('click', finish);
+  show();
+}
+
+function buildMapInner(root, q, st, score) {
+  if (score !== undefined) root.insertAdjacentHTML('beforeend', `<p class="bscore">You placed ${score} of ${BUILD.length} on the first try. Here is the whole argument.</p>`);
   root.insertAdjacentHTML('beforeend', `
     <h3>Drop each choice into the argument</h3>
     <p class="hint">This is the passage’s argument. Select a box to find it in the passage, then drop a choice in to see what it does.</p>
@@ -278,7 +330,7 @@ const MARK_LABEL = { yes: 'meets', no: 'fails', na: 'not relevant' };
 
 function buildPrinciple(root, q, st) {
   root.insertAdjacentHTML('beforeend', `
-    <h3>The author’s rule, from paragraph 5</h3>
+    <h3>The author’s rule, from ${q.ruleSource || 'the passage'}</h3>
     <div class="rule">
       ${q.criteria.map((c) => `<button type="button" data-src="${c.source}"><b>${esc(c.label)}</b><span>${esc(c.note)}</span></button>`).join('')}
     </div>
