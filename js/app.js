@@ -1,4 +1,4 @@
-import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=6';
+import { PASSAGE, NODES, EDGES, QUESTIONS, ROLES, BUILD } from './content.js?v=8';
 
 const $ = (id) => document.getElementById(id);
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -259,8 +259,11 @@ const nodeName = (k) => {
 };
 
 function buildMap(root, q, st) {
+  // Restate the question beside the map so the link between them is visible.
+  const stem = esc(q.stem).replace(esc(q.stemFocus), `<b>${esc(q.stemFocus)}</b>`);
   root.insertAdjacentHTML('beforeend', `
-    <p class="hint">The map shows the passage’s whole argument${warm.done ? ', the same one you built in the warm-up' : ''}. The question asks about paragraph 4, the marked box. Test each answer choice below to see which part of the argument it affects, and how. You can also select any box to find it in the passage.</p>
+    <p class="qrecap"><span class="qrecap-label">The question</span>${stem}</p>
+    <p class="hint lead">${esc(q.toolIntro)}${warm.done ? ' This is the same map you built in the warm-up.' : ''}</p>
     ${mapMarkup()}
     <div class="testhead">
       <h4>Answer choices</h4>
@@ -282,7 +285,8 @@ function buildMap(root, q, st) {
   const list = root.querySelector('#testList');
   wireMap(mapEl);
   if (q.focusNode) {
-    mapEl.querySelector(`.node[data-node="${q.focusNode}"]`)?.classList.add('focus');
+    const fn = mapEl.querySelector(`.node[data-node="${q.focusNode}"]`);
+    if (fn) { fn.classList.add('focus'); fn.dataset.focusLabel = q.focusLabel; }
     lightSentences(nodeSentences(q.focusNode));
   }
   st.tool.tested = st.tool.tested || [];

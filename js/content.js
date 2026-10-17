@@ -65,6 +65,9 @@ export const QUESTIONS = [
     skill: 'Reasoning within the text',
     tool: 'map',
     focusNode: 'R2',
+    focusLabel: 'This box is paragraph 4’s argument',
+    stemFocus: 'paragraph 4',
+    toolIntro: 'Paragraph 4 argues that no cleaning can return an old painting to its first state, so a cleaned painting is really an interpretation. On this map of the whole argument, that is the marked box: one of the two reasons the author gives for the main claim. (Paragraph 4 is also marked in blue in the passage.) A choice challenges paragraph 4 only if it lands on that box. Test each choice below to see where it lands.',
     toolHead: 'Where each choice lands in the argument',
     stem: 'Which of the following findings, if true, would most seriously challenge the author’s argument in paragraph 4?',
     choices: [
